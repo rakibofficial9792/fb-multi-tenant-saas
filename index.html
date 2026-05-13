@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>FB Multi Tenant SaaS</title>
+  <title>FB Post Collector</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -18,27 +18,17 @@
 
     <div class="bg-white rounded-3xl shadow p-6 mb-6">
 
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex flex-col gap-3">
 
         <div>
+
           <h1 class="text-3xl font-bold">
             FB Post Collector
           </h1>
 
           <p class="text-gray-500 mt-2">
-            Multi Client SaaS Dashboard
+            Powered by MB Rakib ❤️
           </p>
-        </div>
-
-        <div class="flex gap-3 flex-wrap">
-
-          <button class="bg-black text-white px-5 py-3 rounded-2xl">
-            Export CSV
-          </button>
-
-          <button class="bg-blue-600 text-white px-5 py-3 rounded-2xl">
-            Collect Posts
-          </button>
 
         </div>
 
@@ -51,36 +41,43 @@
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
 
       <div class="bg-white p-5 rounded-2xl shadow">
+
         <h2 class="text-gray-500 text-sm">
-          Clients
+          Owner
         </h2>
 
         <p class="text-3xl font-bold mt-2">
-          12
+          1
         </p>
+
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow">
+
         <h2 class="text-gray-500 text-sm">
-          Workers
+          Employers
         </h2>
 
         <p class="text-3xl font-bold mt-2">
           48
         </p>
+
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow">
+
         <h2 class="text-gray-500 text-sm">
-          Posts
+          Total Posts
         </h2>
 
         <p class="text-3xl font-bold mt-2">
           2540
         </p>
+
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow">
+
         <h2 class="text-gray-500 text-sm">
           Published
         </h2>
@@ -88,16 +85,19 @@
         <p class="text-3xl font-bold mt-2 text-green-600">
           1800
         </p>
+
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow">
+
         <h2 class="text-gray-500 text-sm">
-          Unpublished
+          UnPublished
         </h2>
 
         <p class="text-3xl font-bold mt-2 text-red-500">
           740
         </p>
+
       </div>
 
     </div>
@@ -129,14 +129,14 @@
         </button>
 
         <button class="bg-gray-200 px-4 py-2 rounded-xl">
-          Unpublished
+          UnPublished
         </button>
 
       </div>
 
     </div>
 
-    <!-- TABLE -->
+    <!-- POSTS TABLE -->
 
     <div class="bg-white rounded-3xl shadow overflow-hidden">
 
@@ -151,7 +151,7 @@
           <input
             type="text"
             placeholder="Search caption..."
-            class="border rounded-xl px-4 py-2"
+            class="border rounded-xl px-4 py-2 w-full md:w-auto"
           />
 
           <select class="border rounded-xl px-4 py-2">
@@ -322,13 +322,25 @@
 
       </div>
 
-      <!-- LOAD MORE -->
+      <!-- BOTTOM ACTIONS -->
 
-      <div class="p-5 text-center border-t">
+      <div class="p-6 border-t">
 
-        <button class="bg-black text-white px-6 py-3 rounded-2xl">
-          Load More Posts
-        </button>
+        <div class="flex flex-col gap-4 items-center">
+
+          <button class="bg-black text-white px-6 py-3 rounded-2xl w-full md:w-auto">
+            Load More Posts
+          </button>
+
+          <button class="bg-blue-600 text-white px-6 py-3 rounded-2xl w-full md:w-auto">
+            Collect Posts
+          </button>
+
+          <button class="bg-black text-white px-6 py-3 rounded-2xl w-full md:w-auto">
+            Export CSV
+          </button>
+
+        </div>
 
       </div>
 
