@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FB SaaS Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+  <div class="max-w-6xl mx-auto p-6">
+
+    <div class="bg-white rounded-2xl shadow p-6 mb-6">
+      <h1 class="text-3xl font-bold">
+        FB Post Collector
+      </h1>
+
+      <p class="text-gray-500 mt-2">
+        Multi Client SaaS Dashboard
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <h2 class="text-gray-500">Clients</h2>
+        <p class="text-3xl font-bold mt-2">0</p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <h2 class="text-gray-500">Workers</h2>
+        <p class="text-3xl font-bold mt-2">0</p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <h2 class="text-gray-500">Posts</h2>
+        <p class="text-3xl font-bold mt-2">0</p>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+
+      <div class="p-4 border-b flex items-center justify-between">
+        <h2 class="font-bold text-xl">
+          Latest Posts
+        </h2>
+
+        <button
+          class="bg-black text-white px-4 py-2 rounded-xl">
+          Export CSV
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+
+        <table class="w-full">
+
+          <thead class="bg-gray-100">
+
+            <tr>
+              <th class="text-left p-4">Image</th>
+              <th class="text-left p-4">Caption</th>
+              <th class="text-left p-4">Time</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="postTable">
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
