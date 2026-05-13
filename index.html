@@ -1,74 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FB SaaS Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>FB Multi Tenant SaaS</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-100">
 
-  <div class="max-w-6xl mx-auto p-6">
+  <div class="max-w-7xl mx-auto p-4 md:p-6">
 
-    <div class="bg-white rounded-2xl shadow p-6 mb-6">
-      <h1 class="text-3xl font-bold">
-        FB Post Collector
-      </h1>
+    <!-- HEADER -->
 
-      <p class="text-gray-500 mt-2">
-        Multi Client SaaS Dashboard
-      </p>
+    <div class="bg-white rounded-3xl shadow p-6 mb-6">
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+          <h1 class="text-3xl font-bold">
+            FB Post Collector
+          </h1>
+
+          <p class="text-gray-500 mt-2">
+            Multi Client SaaS Dashboard
+          </p>
+        </div>
+
+        <div class="flex gap-3 flex-wrap">
+
+          <button class="bg-black text-white px-5 py-3 rounded-2xl">
+            Export CSV
+          </button>
+
+          <button class="bg-blue-600 text-white px-5 py-3 rounded-2xl">
+            Collect Posts
+          </button>
+
+        </div>
+
+      </div>
+
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <!-- STATS -->
+
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
 
       <div class="bg-white p-5 rounded-2xl shadow">
-        <h2 class="text-gray-500">Clients</h2>
-        <p class="text-3xl font-bold mt-2">0</p>
+        <h2 class="text-gray-500 text-sm">
+          Clients
+        </h2>
+
+        <p class="text-3xl font-bold mt-2">
+          12
+        </p>
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow">
-        <h2 class="text-gray-500">Workers</h2>
-        <p class="text-3xl font-bold mt-2">0</p>
+        <h2 class="text-gray-500 text-sm">
+          Workers
+        </h2>
+
+        <p class="text-3xl font-bold mt-2">
+          48
+        </p>
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow">
-        <h2 class="text-gray-500">Posts</h2>
-        <p class="text-3xl font-bold mt-2">0</p>
+        <h2 class="text-gray-500 text-sm">
+          Posts
+        </h2>
+
+        <p class="text-3xl font-bold mt-2">
+          2540
+        </p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <h2 class="text-gray-500 text-sm">
+          Published
+        </h2>
+
+        <p class="text-3xl font-bold mt-2 text-green-600">
+          1800
+        </p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <h2 class="text-gray-500 text-sm">
+          Unpublished
+        </h2>
+
+        <p class="text-3xl font-bold mt-2 text-red-500">
+          740
+        </p>
       </div>
 
     </div>
 
-    <div class="bg-white rounded-2xl shadow overflow-hidden">
+    <!-- FILTERS -->
 
-      <div class="p-4 border-b flex items-center justify-between">
-        <h2 class="font-bold text-xl">
+    <div class="bg-white rounded-3xl shadow p-4 mb-6">
+
+      <div class="flex flex-wrap gap-3">
+
+        <button class="bg-black text-white px-4 py-2 rounded-xl">
+          Today
+        </button>
+
+        <button class="bg-gray-200 px-4 py-2 rounded-xl">
+          7 Days
+        </button>
+
+        <button class="bg-gray-200 px-4 py-2 rounded-xl">
+          30 Days
+        </button>
+
+        <button class="bg-gray-200 px-4 py-2 rounded-xl">
+          Scheduled
+        </button>
+
+        <button class="bg-gray-200 px-4 py-2 rounded-xl">
+          Published
+        </button>
+
+        <button class="bg-gray-200 px-4 py-2 rounded-xl">
+          Unpublished
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- TABLE -->
+
+    <div class="bg-white rounded-3xl shadow overflow-hidden">
+
+      <div class="p-4 border-b flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+
+        <h2 class="font-bold text-2xl">
           Latest Posts
         </h2>
 
-        <button
-          class="bg-black text-white px-4 py-2 rounded-xl">
-          Export CSV
-        </button>
+        <div class="flex gap-3 flex-wrap">
+
+          <input
+            type="text"
+            placeholder="Search caption..."
+            class="border rounded-xl px-4 py-2"
+          />
+
+          <select class="border rounded-xl px-4 py-2">
+
+            <option>
+              100 Posts
+            </option>
+
+            <option>
+              200 Posts
+            </option>
+
+            <option>
+              500 Posts
+            </option>
+
+          </select>
+
+        </div>
+
       </div>
 
       <div class="overflow-x-auto">
 
-        <table class="w-full">
+        <table class="w-full min-w-[1200px]">
 
           <thead class="bg-gray-100">
 
             <tr>
-              <th class="text-left p-4">Image</th>
-              <th class="text-left p-4">Caption</th>
-              <th class="text-left p-4">Time</th>
+
+              <th class="text-left p-4">
+                Image
+              </th>
+
+              <th class="text-left p-4">
+                Caption
+              </th>
+
+              <th class="text-left p-4">
+                Time
+              </th>
+
+              <th class="text-left p-4">
+                Status
+              </th>
+
+              <th class="text-left p-4">
+                Schedule
+              </th>
+
+              <th class="text-left p-4">
+                Post ID
+              </th>
+
+              <th class="text-left p-4">
+                Action
+              </th>
+
             </tr>
 
           </thead>
 
-          <tbody id="postTable">
+          <tbody>
+
+            <!-- ROW 1 -->
+
+            <tr class="border-b hover:bg-gray-50">
+
+              <td class="p-4">
+
+                <img
+                  src="https://placehold.co/100x100"
+                  class="w-20 h-20 rounded-2xl object-cover"
+                />
+
+              </td>
+
+              <td class="p-4 max-w-sm">
+                Example Facebook Post Caption Here
+              </td>
+
+              <td class="p-4 whitespace-nowrap">
+                2026-05-13 10:00 PM
+              </td>
+
+              <td class="p-4">
+
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                  Published
+                </span>
+
+              </td>
+
+              <td class="p-4 whitespace-nowrap">
+                2026-05-20 09:00 PM
+              </td>
+
+              <td class="p-4 font-mono text-sm">
+                672814019244150_122171920298861728
+              </td>
+
+              <td class="p-4">
+
+                <button
+                  onclick="copyPostId('672814019244150_122171920298861728')"
+                  class="bg-black text-white px-4 py-2 rounded-xl"
+                >
+                  Copy ID
+                </button>
+
+              </td>
+
+            </tr>
+
+            <!-- ROW 2 -->
+
+            <tr class="border-b hover:bg-gray-50">
+
+              <td class="p-4">
+
+                <img
+                  src="https://placehold.co/100x100"
+                  class="w-20 h-20 rounded-2xl object-cover"
+                />
+
+              </td>
+
+              <td class="p-4 max-w-sm">
+                Another Scheduled Post Example
+              </td>
+
+              <td class="p-4 whitespace-nowrap">
+                2026-05-12 08:30 PM
+              </td>
+
+              <td class="p-4">
+
+                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
+                  Scheduled
+                </span>
+
+              </td>
+
+              <td class="p-4 whitespace-nowrap">
+                2026-05-25 11:00 PM
+              </td>
+
+              <td class="p-4 font-mono text-sm">
+                672814019244150_122171920298861999
+              </td>
+
+              <td class="p-4">
+
+                <button
+                  onclick="copyPostId('672814019244150_122171920298861999')"
+                  class="bg-black text-white px-4 py-2 rounded-xl"
+                >
+                  Copy ID
+                </button>
+
+              </td>
+
+            </tr>
 
           </tbody>
 
@@ -76,11 +322,32 @@
 
       </div>
 
+      <!-- LOAD MORE -->
+
+      <div class="p-5 text-center border-t">
+
+        <button class="bg-black text-white px-6 py-3 rounded-2xl">
+          Load More Posts
+        </button>
+
+      </div>
+
     </div>
 
   </div>
 
-  <script src="app.js"></script>
+  <script>
+
+    function copyPostId(id) {
+
+      navigator.clipboard.writeText(id);
+
+      alert("Post ID Copied: " + id);
+
+    }
+
+  </script>
 
 </body>
+
 </html>
