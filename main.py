@@ -21,6 +21,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 SECRET_KEY = "SUPER_SECRET_KEY_2026"
 ALGORITHM = "HS256"
+
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
@@ -30,6 +31,7 @@ security = HTTPBearer()
 
 
 def create_access_token(data: dict, expires_days: int = 7):
+
     to_encode = data.copy()
 
     expire = datetime.utcnow() + timedelta(days=expires_days)
@@ -50,9 +52,11 @@ def create_access_token(data: dict, expires_days: int = 7):
 def verify_token(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
+
     token = credentials.credentials
 
     try:
+
         payload = jwt.decode(
             token,
             SECRET_KEY,
@@ -62,6 +66,7 @@ def verify_token(
         return payload
 
     except:
+
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"
@@ -80,6 +85,7 @@ class EmployeeLogin(BaseModel):
 
 @app.get("/")
 def home():
+
     return {
         "status": "running",
         "message": "FB Multi Tenant SaaS Live 🚀"
@@ -92,9 +98,6 @@ def client_login(data: ClientLogin):
     result = supabase.table("clients").select("*").eq(
         "email",
         data.email
-    ).eq(
-        "password",
-        data.password
     ).execute()
 
     if not result.data:
@@ -103,9 +106,20 @@ def client_login(data: ClientLogin):
             detail="Invalid login"
         )
 
+    user_data = result.data[0]
+
+    if not pwd_context.verify(
+        data.password,
+        user_data["password"]
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid password"
+        )
+
     token = create_access_token(
         {
-            "client_id": result.data[0]["id"],
+            "client_id": user_data["id"],
             "role": "client"
         },
         expires_days=30
@@ -114,7 +128,7 @@ def client_login(data: ClientLogin):
     return {
         "success": True,
         "token": token,
-        "client": result.data[0]
+        "client": user_data
     }
 
 
@@ -124,9 +138,6 @@ def employee_login(data: EmployeeLogin):
     result = supabase.table("employees").select("*").eq(
         "username",
         data.username
-    ).eq(
-        "password",
-        data.password
     ).execute()
 
     if not result.data:
@@ -135,10 +146,21 @@ def employee_login(data: EmployeeLogin):
             detail="Invalid login"
         )
 
+    user_data = result.data[0]
+
+    if not pwd_context.verify(
+        data.password,
+        user_data["password"]
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid password"
+        )
+
     token = create_access_token(
         {
-            "employee_id": result.data[0]["id"],
-            "client_id": result.data[0]["client_id"],
+            "employee_id": user_data["id"],
+            "client_id": user_data["client_id"],
             "role": "employee"
         },
         expires_days=7
@@ -147,7 +169,7 @@ def employee_login(data: EmployeeLogin):
     return {
         "success": True,
         "token": token,
-        "employee": result.data[0]
+        "employee": user_data
     }
 
 
@@ -193,6 +215,8 @@ def collect_posts(
 
     posts = data.get("data", [])
 
+    saved_posts = []
+
     for post in posts:
 
         post_id = post.get("id")
@@ -205,17 +229,25 @@ def collect_posts(
         if existing.data:
             continue
 
-        supabase.table("posts").insert({
+        post_data = {
             "client_id": client_id,
             "post_id": post.get("id"),
             "caption": post.get("message", ""),
             "image_url": post.get("full_picture", ""),
             "created_time": post.get("created_time")
-        }).execute()
+        }
+
+        supabase.table("posts").insert(
+            post_data
+        ).execute()
+
+        saved_posts.append(post_data)
 
     return {
         "success": True,
-        "total_posts": len(posts)
+        "total_fetched": len(posts),
+        "new_saved": len(saved_posts),
+        "posts": saved_posts
     }
 
 
@@ -234,6 +266,9 @@ def get_posts(
     posts = supabase.table("posts").select("*").eq(
         "client_id",
         client_id
+    ).order(
+        "id",
+        desc=True
     ).execute()
 
     return {
@@ -272,6 +307,9 @@ def employee_posts(
     posts = supabase.table("posts").select("*").eq(
         "client_id",
         client_id
+    ).order(
+        "id",
+        desc=True
     ).execute()
 
     return {
