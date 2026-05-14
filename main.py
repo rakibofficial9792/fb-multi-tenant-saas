@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from supabase import create_client
 import requests
@@ -20,6 +21,8 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 SECRET_KEY = "SUPER_SECRET_KEY_2026"
 ALGORITHM = "HS256"
 
+security = HTTPBearer()
+
 
 def create_access_token(data: dict, expires_days: int = 7):
     to_encode = data.copy()
@@ -37,6 +40,27 @@ def create_access_token(data: dict, expires_days: int = 7):
     )
 
     return encoded_jwt
+
+
+def verify_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        return payload
+
+    except:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
 
 
 class ClientLogin(BaseModel):
@@ -123,7 +147,16 @@ def employee_login(data: EmployeeLogin):
 
 
 @app.get("/collect-posts/{client_id}")
-def collect_posts(client_id: int):
+def collect_posts(
+    client_id: int,
+    user=Depends(verify_token)
+):
+
+    if user["client_id"] != client_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
 
     client = supabase.table("clients").select("*").eq(
         "id",
@@ -143,71 +176,78 @@ def collect_posts(client_id: int):
 
     fb_url = f"https://graph.facebook.com/v23.0/{page_id}/posts"
 
-    params = {
-        "access_token": access_token,
-        "fields": "id,message,created_time,full_picture"
-    }
-
     response = requests.get(
         fb_url,
-        params=params
+        params={
+            "access_token": access_token,
+            "fields": "id,message,created_time,full_picture"
+        }
     )
 
     data = response.json()
 
     posts = data.get("data", [])
 
-    saved_posts = []
-
     for post in posts:
 
-        post_data = {
+        post_id = post.get("id")
+
+        existing = supabase.table("posts").select("*").eq(
+            "post_id",
+            post_id
+        ).execute()
+
+        if existing.data:
+            continue
+
+        supabase.table("posts").insert({
             "client_id": client_id,
             "post_id": post.get("id"),
             "caption": post.get("message", ""),
             "image_url": post.get("full_picture", ""),
-            "post_time": post.get("created_time")
-        }
-
-        existing = supabase.table("posts").select("*").eq(
-            "post_id",
-            post.get("id")
-        ).execute()
-
-        if not existing.data:
-
-            supabase.table("posts").insert(
-                post_data
-            ).execute()
-
-            saved_posts.append(post_data)
+            "created_time": post.get("created_time")
+        }).execute()
 
     return {
         "success": True,
-        "total_fetched": len(posts),
-        "new_saved": len(saved_posts),
-        "posts": saved_posts
+        "total_posts": len(posts)
     }
 
 
 @app.get("/posts/{client_id}")
-def get_posts(client_id: int):
+def get_posts(
+    client_id: int,
+    user=Depends(verify_token)
+):
+
+    if user["client_id"] != client_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
 
     posts = supabase.table("posts").select("*").eq(
         "client_id",
         client_id
-    ).order(
-        "id",
-        desc=True
     ).execute()
 
     return {
+        "success": True,
         "posts": posts.data
     }
 
 
 @app.get("/employee-posts/{employee_id}")
-def employee_posts(employee_id: int):
+def employee_posts(
+    employee_id: int,
+    user=Depends(verify_token)
+):
+
+    if user["employee_id"] != employee_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
 
     employee = supabase.table("employees").select("*").eq(
         "id",
@@ -220,17 +260,17 @@ def employee_posts(employee_id: int):
             detail="Employee not found"
         )
 
-    client_id = employee.data[0]["client_id"]
+    employee_data = employee.data[0]
+
+    client_id = employee_data["client_id"]
 
     posts = supabase.table("posts").select("*").eq(
         "client_id",
         client_id
-    ).order(
-        "id",
-        desc=True
     ).execute()
 
     return {
-        "employee": employee.data[0],
+        "success": True,
+        "employee": employee_data["employee_name"],
         "posts": posts.data
     }
