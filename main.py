@@ -6,6 +6,7 @@ import requests
 import os
 
 from jose import jwt
+from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
 app = FastAPI()
@@ -20,6 +21,10 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 SECRET_KEY = "SUPER_SECRET_KEY_2026"
 ALGORITHM = "HS256"
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
 
 security = HTTPBearer()
 
