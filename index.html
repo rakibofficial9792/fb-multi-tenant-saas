@@ -1,387 +1,340 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <title>FB Post Collector</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-    }
+    try { tailwind.config = { darkMode: 'class' } } catch(e) {}
   </script>
 
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner { animation: spin 0.8s linear infinite; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+    .active-filter   { background: #2563eb !important; color: white !important; }
+    .inactive-filter { background: #374151; color: #d1d5db; }
+    .inactive-filter:hover { background: #4b5563; }
+  </style>
 </head>
 
-<body class="dark bg-gray-900 transition-all duration-300">
+<body class="bg-gray-900 text-white min-h-screen">
 
   <div class="max-w-7xl mx-auto p-4 md:p-6">
 
     <!-- HEADER -->
-
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow p-6 mb-6 transition-all duration-300">
-
+    <div class="bg-gray-800 rounded-3xl shadow p-6 mb-6">
       <div class="flex items-center justify-between flex-wrap gap-4">
-
         <div class="flex items-center gap-4">
-
-          <img
-            src="rakib.png.png"
-            alt="MD Rakib"
-            class="w-16 h-16 rounded-full object-cover border-2 border-white shadow"
-          />
-
+          <img src="rakib.png" alt="MD Rakib"
+            onerror="this.src='https://ui-avatars.com/api/?name=MD+Rakib&background=3b82f6&color=fff&size=64'"
+            class="w-16 h-16 rounded-full object-cover border-2 border-blue-500 shadow" />
           <div>
-
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-              FB Post Collector
-            </h1>
-
-            <p class="text-gray-500 dark:text-gray-300 mt-2">
-              Powered by MD Rakib
-            </p>
-
+            <h1 class="text-2xl md:text-3xl font-bold text-white">FB Post Collector</h1>
+            <p class="text-gray-400 mt-1 text-sm">Powered by MD Rakib</p>
           </div>
-
         </div>
-
-        <!-- DARK MODE BUTTON -->
-
-        <button
-          onclick="document.documentElement.classList.toggle('dark')"
-          class="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl transition-all duration-300"
-        >
-          🌙
-        </button>
-
+        <div class="flex items-center gap-3">
+          <span id="api-status" class="text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300">
+            ⏳ Connecting...
+          </span>
+          <button onclick="toggleTheme()" id="theme-btn"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-all">🌙</button>
+        </div>
       </div>
-
     </div>
 
     <!-- STATS -->
-
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow transition-all duration-300">
-
-        <h2 class="text-gray-500 dark:text-gray-300 text-sm">
-          Owner
-        </h2>
-
-        <p class="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
-          1
-        </p>
-
+      <div class="bg-gray-800 p-5 rounded-2xl shadow">
+        <p class="text-gray-400 text-xs mb-1">Owner</p>
+        <p class="text-3xl font-bold text-white">1</p>
       </div>
-
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow transition-all duration-300">
-
-        <h2 class="text-gray-500 dark:text-gray-300 text-sm">
-          Employers
-        </h2>
-
-        <p class="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
-          1
-        </p>
-
+      <div class="bg-gray-800 p-5 rounded-2xl shadow">
+        <p class="text-gray-400 text-xs mb-1">Employers</p>
+        <p class="text-3xl font-bold text-white">1</p>
       </div>
-
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow transition-all duration-300">
-
-        <h2 class="text-gray-500 dark:text-gray-300 text-sm">
-          Total Posts
-        </h2>
-
-        <p class="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
-          3000
-        </p>
-
+      <div class="bg-gray-800 p-5 rounded-2xl shadow">
+        <p class="text-gray-400 text-xs mb-1">Total Posts</p>
+        <p id="stat-total" class="text-3xl font-bold text-white">—</p>
       </div>
-
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow transition-all duration-300">
-
-        <h2 class="text-gray-500 dark:text-gray-300 text-sm">
-          Published
-        </h2>
-
-        <p class="text-3xl font-bold mt-2 text-green-500">
-          1800
-        </p>
-
+      <div class="bg-gray-800 p-5 rounded-2xl shadow">
+        <p class="text-gray-400 text-xs mb-1">Published</p>
+        <p id="stat-published" class="text-3xl font-bold text-green-400">—</p>
       </div>
-
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow transition-all duration-300">
-
-        <h2 class="text-gray-500 dark:text-gray-300 text-sm">
-          UnPublished
-        </h2>
-
-        <p class="text-3xl font-bold mt-2 text-red-500">
-          740
-        </p>
-
+      <div class="bg-gray-800 p-5 rounded-2xl shadow">
+        <p class="text-gray-400 text-xs mb-1">UnPublished</p>
+        <p id="stat-unpublished" class="text-3xl font-bold text-red-400">—</p>
       </div>
-
     </div>
 
     <!-- FILTERS -->
-
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow p-4 mb-6 transition-all duration-300">
-
-      <div class="flex flex-wrap gap-3">
-
-        <button class="bg-black text-white px-4 py-2 rounded-xl">
-          Today
-        </button>
-
-        <button class="bg-gray-200 dark:bg-gray-700 dark:text-white px-4 py-2 rounded-xl">
-          7 Days
-        </button>
-
-        <button class="bg-gray-200 dark:bg-gray-700 dark:text-white px-4 py-2 rounded-xl">
-          30 Days
-        </button>
-
-        <button class="bg-gray-200 dark:bg-gray-700 dark:text-white px-4 py-2 rounded-xl">
-          Scheduled
-        </button>
-
-        <button class="bg-gray-200 dark:bg-gray-700 dark:text-white px-4 py-2 rounded-xl">
-          Published
-        </button>
-
-        <button class="bg-gray-200 dark:bg-gray-700 dark:text-white px-4 py-2 rounded-xl">
-          UnPublished
-        </button>
-
+    <div class="bg-gray-800 rounded-3xl shadow p-4 mb-6">
+      <div class="flex flex-wrap gap-2">
+        <button onclick="setFilter('all')" data-filter="all"
+          class="filter-btn active-filter px-4 py-2 rounded-xl text-sm transition-all">All</button>
+        <button onclick="setFilter('today')" data-filter="today"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">Today</button>
+        <button onclick="setFilter('7days')" data-filter="7days"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">7 Days</button>
+        <button onclick="setFilter('30days')" data-filter="30days"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">30 Days</button>
+        <button onclick="setFilter('published')" data-filter="published"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">Published</button>
+        <button onclick="setFilter('unpublished')" data-filter="unpublished"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">UnPublished</button>
       </div>
-
     </div>
 
-    <!-- POSTS TABLE -->
+    <!-- TABLE CARD -->
+    <div class="bg-gray-800 rounded-3xl shadow overflow-hidden">
 
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow overflow-hidden transition-all duration-300">
-
-      <div class="p-4 border-b dark:border-gray-700 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-
-        <h2 class="font-bold text-2xl text-gray-900 dark:text-white">
-          Latest Posts
-        </h2>
-
+      <div class="p-4 border-b border-gray-700 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+        <h2 class="font-bold text-xl text-white">Latest Posts</h2>
         <div class="flex gap-3 flex-wrap">
-
-          <input
-            type="text"
-            placeholder="Search time... (e.g. MAY 5 AT 1:00 PM)"
-            class="border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2 w-full md:w-auto"
-          />
-
-          <select class="border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2">
-
-            <option>
-              10 Posts
-            </option>
-
-            <option>
-              25 Posts
-            </option>
-
-            <option>
-              50 Posts
-            </option>
-
-            <option>
-              100 Posts
-            </option>
-
+          <input id="search-input" type="text"
+            placeholder="Search caption or Post ID..."
+            oninput="renderTable(allPosts)"
+            class="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-blue-500" />
+          <select id="limit-select" onchange="renderTable(allPosts)"
+            class="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2 text-sm">
+            <option value="10">10 Posts</option>
+            <option value="25">25 Posts</option>
+            <option value="50">50 Posts</option>
+            <option value="100">100 Posts</option>
           </select>
-
         </div>
-
       </div>
 
-      <div class="overflow-x-auto">
+      <!-- LOADING -->
+      <div id="loading-state" class="flex flex-col items-center justify-center py-20 gap-4">
+        <div class="spinner w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+        <p class="text-gray-400 text-sm">Loading... প্রথমবার ৩০ সেকেন্ড লাগতে পারে</p>
+      </div>
 
-        <table class="w-full min-w-[1200px]">
+      <!-- ERROR -->
+      <div id="error-state" class="hidden flex-col items-center justify-center py-16 gap-4 text-center px-6">
+        <div class="text-5xl">⚠️</div>
+        <p class="text-red-400 font-semibold">API সংযোগ হয়নি</p>
+        <p id="error-message" class="text-gray-400 text-sm max-w-sm"></p>
+        <button onclick="loadPosts()"
+          class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition-all text-sm">
+          🔄 আবার চেষ্টা করো
+        </button>
+      </div>
 
-          <thead class="bg-gray-100 dark:bg-gray-700 dark:text-white">
+      <!-- EMPTY -->
+      <div id="empty-state" class="hidden flex-col items-center justify-center py-16 gap-3">
+        <div class="text-5xl">📭</div>
+        <p class="text-gray-400 text-sm">কোনো post পাওয়া যায়নি</p>
+      </div>
 
+      <!-- TABLE -->
+      <div id="table-wrapper" class="hidden overflow-x-auto">
+        <table class="w-full min-w-[800px]">
+          <thead class="bg-gray-700 text-gray-300 text-sm">
             <tr>
-
-              <th class="text-left p-4">
-                Image
-              </th>
-
-              <th class="text-left p-4">
-                Caption
-              </th>
-
-              <th class="text-left p-4">
-                Time
-              </th>
-
-              <th class="text-left p-4">
-                Status
-              </th>
-
-              <th class="text-left p-4">
-                Schedule
-              </th>
-
-              <th class="text-left p-4">
-                Post ID
-              </th>
-
-              <th class="text-left p-4">
-                Action
-              </th>
-
+              <th class="text-left p-4">Image</th>
+              <th class="text-left p-4">Caption</th>
+              <th class="text-left p-4">Time</th>
+              <th class="text-left p-4">Status</th>
+              <th class="text-left p-4">Post ID</th>
+              <th class="text-left p-4">Action</th>
             </tr>
-
           </thead>
-
-          <tbody id="posts-table">
-
-          </tbody>
-
+          <tbody id="posts-table"></tbody>
         </table>
-
       </div>
 
-      <!-- BOTTOM ACTIONS -->
-
-      <div class="p-6 border-t dark:border-gray-700">
-
+      <!-- BOTTOM BUTTONS -->
+      <div class="p-6 border-t border-gray-700">
         <div class="flex flex-wrap justify-center gap-4">
-
-          <button class="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-2xl">
-            Collect Posts
+          <button onclick="loadPosts()"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-2xl transition-all text-sm">
+            🔄 Refresh
           </button>
-
-          <button class="bg-blue-600 text-white px-6 py-3 rounded-2xl">
-            Load More Posts
+          <button onclick="exportCSV()"
+            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl transition-all text-sm">
+            📥 Export CSV
           </button>
-
-          <button class="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-2xl">
-            Export CSV
-          </button>
-
         </div>
-
       </div>
 
     </div>
+  </div>
 
+  <!-- TOAST -->
+  <div id="toast"
+    class="fixed bottom-6 right-6 bg-gray-700 text-white px-5 py-3 rounded-2xl shadow-xl text-sm opacity-0 pointer-events-none transition-opacity duration-300">
   </div>
 
   <script>
+    const API_BASE = "https://fb-multi-tenant-saas.onrender.com"
+    const TOKEN    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODEzODU0MDB9.hixoY-R1tARXWAnpPcbh1sX4PnguZaILXoRpjsK_vEs"
+
+    let allPosts = []
+    let currentFilter = 'all'
+    let isDark = true
+
+    function toggleTheme() {
+      isDark = !isDark
+      document.documentElement.classList.toggle('dark', isDark)
+      document.body.style.background = isDark ? '' : '#f3f4f6'
+      document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️'
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast')
+      t.textContent = msg
+      t.style.opacity = '1'
+      setTimeout(() => t.style.opacity = '0', 2500)
+    }
 
     function copyPostId(id) {
-
-      navigator.clipboard.writeText(id);
-
-      alert("Post ID Copied: " + id);
-
+      navigator.clipboard.writeText(id)
+        .then(() => showToast("✅ Copied: " + id))
+        .catch(() => showToast("❌ Copy failed"))
     }
 
-  </script>
-<script>
-
-  const API_BASE = "https://fb-multi-tenant-saas.onrender.com"
-
-  function copyPostId(id) {
-
-    navigator.clipboard.writeText(id)
-
-    alert("Post ID Copied: " + id)
-
-  }
-
-  async function loadPosts() {
-
-    try {
-
-      const response = await fetch(
-        `${API_BASE}/posts/2`,
-        {
-          headers: {
-            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODEzODU0MDB9.hixoY-R1tARXWAnpPcbh1sX4PnguZaILXoRpjsK_vEs"
-          }
-        }
-      )
-
-      const data = await response.json()
-
-      const table = document.getElementById("posts-table")
-
-      table.innerHTML = ""
-
-      data.forEach(post => {
-
-        table.innerHTML += `
-          <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
-
-            <td class="p-4">
-              <img
-                src="${post.image_url || 'https://placehold.co/100x100'}"
-                class="w-20 h-20 rounded-2xl object-cover"
-              />
-            </td>
-
-            <td class="p-4 max-w-sm text-gray-900 dark:text-white">
-              ${post.caption || 'No Caption'}
-            </td>
-
-            <td class="p-4 whitespace-nowrap text-gray-900 dark:text-white">
-              ${post.created_time || 'No Time'}
-            </td>
-
-            <td class="p-4">
-              <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                Published
-              </span>
-            </td>
-
-            <td class="p-4 whitespace-nowrap text-gray-900 dark:text-white">
-              Scheduled
-            </td>
-
-            <td class="p-4 font-mono text-sm text-gray-900 dark:text-white">
-              ${post.post_id}
-            </td>
-
-            <td class="p-4">
-              <button
-                onclick="copyPostId('${post.post_id}')"
-                class="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl"
-              >
-                Copy ID
-              </button>
-            </td>
-
-          </tr>
-        `
-
+    function setFilter(filter) {
+      currentFilter = filter
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.className = 'filter-btn px-4 py-2 rounded-xl text-sm transition-all ' +
+          (btn.dataset.filter === filter ? 'active-filter' : 'inactive-filter')
       })
-
-    } catch (error) {
-
-      console.log(error)
-
+      renderTable(allPosts)
     }
 
-  }
+    function showState(state) {
+      ['loading-state','error-state','empty-state','table-wrapper'].forEach(id => {
+        document.getElementById(id).classList.add('hidden')
+        document.getElementById(id).classList.remove('flex')
+      })
+      const el = document.getElementById(
+        state==='loading' ? 'loading-state' :
+        state==='error'   ? 'error-state' :
+        state==='empty'   ? 'empty-state' : 'table-wrapper'
+      )
+      el.classList.remove('hidden')
+      if (state !== 'table') el.classList.add('flex')
+    }
 
-  loadPosts()
+    function renderTable(posts) {
+      const search = document.getElementById('search-input').value.toLowerCase()
+      const limit  = parseInt(document.getElementById('limit-select').value)
+      const now    = new Date()
 
-</script>
+      let filtered = posts.filter(post => {
+        const cap = (post.caption || '').toLowerCase()
+        const pid = (post.post_id  || '').toLowerCase()
+        if (search && !cap.includes(search) && !pid.includes(search)) return false
+        if (currentFilter === 'today')
+          return new Date(post.created_time).toDateString() === now.toDateString()
+        if (currentFilter === '7days')
+          return (now - new Date(post.created_time)) <= 7*24*60*60*1000
+        if (currentFilter === '30days')
+          return (now - new Date(post.created_time)) <= 30*24*60*60*1000
+        if (currentFilter === 'published')   return post.status === 'published'
+        if (currentFilter === 'unpublished') return post.status !== 'published'
+        return true
+      }).slice(0, limit)
+
+      if (!filtered.length) { showState('empty'); return }
+      showState('table')
+
+      document.getElementById('posts-table').innerHTML = filtered.map(post => `
+        <tr class="border-b border-gray-700 hover:bg-gray-700 transition-all fade-in">
+          <td class="p-4">
+            <img src="${post.image_url || 'https://placehold.co/64x64/374151/9ca3af?text=No'}"
+              onerror="this.src='https://placehold.co/64x64/374151/9ca3af?text=No'"
+              class="w-14 h-14 rounded-xl object-cover" />
+          </td>
+          <td class="p-4 max-w-xs text-gray-300 text-sm">
+            ${post.caption
+              ? post.caption.substring(0,100)+(post.caption.length>100?'...':'')
+              : '<span class="text-gray-500">No Caption</span>'}
+          </td>
+          <td class="p-4 whitespace-nowrap text-gray-400 text-xs">${post.created_time||'—'}</td>
+          <td class="p-4">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+              post.status==='published'
+                ? 'bg-green-900 text-green-300'
+                : 'bg-red-900 text-red-300'}">
+              ${post.status==='published' ? '✅ Published' : '❌ Unpublished'}
+            </span>
+          </td>
+          <td class="p-4 font-mono text-xs text-gray-400 max-w-[100px] truncate">${post.post_id||'—'}</td>
+          <td class="p-4">
+            <button onclick="copyPostId('${post.post_id}')"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs transition-all">
+              Copy ID
+            </button>
+          </td>
+        </tr>
+      `).join('')
+
+      const pub = posts.filter(p => p.status==='published').length
+      document.getElementById('stat-total').textContent       = posts.length
+      document.getElementById('stat-published').textContent   = pub
+      document.getElementById('stat-unpublished').textContent = posts.length - pub
+    }
+
+    async function loadPosts() {
+      showState('loading')
+      const s = document.getElementById('api-status')
+      s.textContent = '⏳ Connecting...'
+      s.className   = 'text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300'
+
+      try {
+        const res = await fetch(`${API_BASE}/posts/2`, {
+          headers: { Authorization: `Bearer ${TOKEN}` }
+        })
+        if (!res.ok) throw new Error(`Server error: ${res.status}`)
+        const data = await res.json()
+        allPosts = Array.isArray(data) ? data : (data.posts || [])
+        s.textContent = '🟢 Connected'
+        s.className   = 'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'
+        renderTable(allPosts)
+      } catch(err) {
+        console.error(err)
+        s.textContent = '🔴 Offline'
+        s.className   = 'text-xs px-3 py-1 rounded-full bg-red-900 text-red-300'
+        let msg = err.message
+        if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('failed')) {
+          msg = 'Render server ঘুমিয়ে আছে। ৩০ সেকেন্ড পর 🔄 Refresh চাপো। অথবা main.py CORS fix deploy করোনি।'
+        }
+        document.getElementById('error-message').textContent = msg
+        showState('error')
+      }
+    }
+
+    function exportCSV() {
+      if (!allPosts.length) { showToast("⚠️ কোনো data নেই"); return }
+      const csv = ['Post ID,Caption,Time,Status,Image URL',
+        ...allPosts.map(p =>
+          [p.post_id, (p.caption||'').replace(/"/g,'""'), p.created_time, p.status, p.image_url]
+          .map(v=>`"${v||''}"`).join(',')
+        )
+      ].join('\n')
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
+        download: 'fb_posts.csv'
+      })
+      a.click()
+      showToast("✅ CSV exported!")
+    }
+
+    loadPosts()
+  </script>
+
 </body>
-
 </html>
