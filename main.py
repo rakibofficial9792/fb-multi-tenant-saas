@@ -1,13 +1,20 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from supabase import create_client
+from dotenv import load_dotenv
 import requests
 import os
 
+load_dotenv()
+
 app = FastAPI()
+
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise Exception("Missing Supabase environment variables")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -42,7 +49,10 @@ def client_login(data: ClientLogin):
     ).execute()
 
     if not result.data:
-        raise HTTPException(status_code=401, detail="Invalid login")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid login"
+        )
 
     return {
         "success": True,
@@ -62,7 +72,10 @@ def employee_login(data: EmployeeLogin):
     ).execute()
 
     if not result.data:
-        raise HTTPException(status_code=401, detail="Invalid login")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid login"
+        )
 
     return {
         "success": True,
@@ -79,7 +92,10 @@ def collect_posts(client_id: int):
     ).execute()
 
     if not client.data:
-        raise HTTPException(status_code=404, detail="Client not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Client not found"
+        )
 
     client_data = client.data[0]
 
@@ -96,7 +112,15 @@ def collect_posts(client_id: int):
         }
     )
 
-    posts = response.json().get("data", [])
+    fb_data = response.json()
+
+    if "error" in fb_data:
+        raise HTTPException(
+            status_code=400,
+            detail=fb_data["error"]
+        )
+
+    posts = fb_data.get("data", [])
 
     saved = []
 
