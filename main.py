@@ -4,6 +4,9 @@ from supabase import create_client
 import requests
 import os
 
+from jose import jwt
+from datetime import datetime, timedelta
+
 app = FastAPI()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -13,7 +16,24 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise Exception("Missing Supabase environment variables")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+SECRET_KEY = "SUPER_SECRET_KEY_2026"
+ALGORITHM = "HS256"
+def create_access_token(data: dict, expires_days: int = 7):
+    to_encode = data.copy()
 
+    expire = datetime.utcnow() + timedelta(days=expires_days)
+
+    to_encode.update({
+        "exp": expire
+    })
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+    return encoded_jwt
 
 class ClientLogin(BaseModel):
     email: str
@@ -72,10 +92,18 @@ def employee_login(data: EmployeeLogin):
             status_code=401,
             detail="Invalid login"
         )
-
+token = create_access_token(
+    {
+        "employee_id": result.data[0]["id"],
+        "client_id": result.data[0]["client_id"],
+        "role": "employee"
+    },
+    expires_days=7
+)
     return {
-        "success": True,
-        "employee": result.data[0]
+    "success": True,
+    "token": token,
+    "employee": result.data[0]
     }
 
 
