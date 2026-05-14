@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware  # ✅ নতুন import
 from pydantic import BaseModel
 from supabase import create_client
 import requests
@@ -10,6 +11,19 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
 app = FastAPI()
+
+# ✅ CORS FIX — GitHub Pages থেকে API call করতে পারবে
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://rakibofficial9792.github.io",  # GitHub Pages
+        "http://localhost",                      # Local test
+        "http://127.0.0.1",                      # Local test
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -81,6 +95,7 @@ class ClientLogin(BaseModel):
 class EmployeeLogin(BaseModel):
     username: str
     password: str
+
 class CreateEmployee(BaseModel):
     employee_name: str
     username: str
@@ -174,6 +189,7 @@ def employee_login(data: EmployeeLogin):
         "token": token,
         "employee": user_data
     }
+
 @app.post("/create-employee/{client_id}")
 def create_employee(
     client_id: int,
