@@ -317,3 +317,14 @@ def employee_posts(
         "employee": employee_data["employee_name"],
         "posts": posts.data
     }
+
+
+@app.get("/generate-hash/{password}")
+def generate_hash(password: str):
+
+    hashed_password = pwd_context.hash(password)
+
+    return {
+        "password": password,
+        "hashed_password": hashed_password
+    }
