@@ -7,23 +7,52 @@
   <title>FB Post Collector</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script>
-    try { tailwind.config = { darkMode: 'class' } } catch(e) {}
+    try {
+      tailwind.config = {
+        darkMode: 'class'
+      }
+    } catch(e) {}
   </script>
 
   <style>
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    .spinner { animation: spin 0.8s linear infinite; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
+
+    .spinner {
+      animation: spin 0.8s linear infinite;
     }
-    .fade-in { animation: fadeIn 0.3s ease forwards; }
-    .active-filter   { background: #2563eb !important; color: white !important; }
-    .inactive-filter { background: #374151; color: #d1d5db; }
-    .inactive-filter:hover { background: #4b5563; }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .active-filter {
+      background: #2563eb !important;
+      color: white !important;
+    }
+
+    .inactive-filter {
+      background: #374151;
+      color: #d1d5db;
+    }
+
+    .inactive-filter:hover {
+      background: #4b5563;
+    }
   </style>
 </head>
 
@@ -33,322 +62,613 @@
 
     <!-- HEADER -->
     <div class="bg-gray-800 rounded-3xl shadow p-6 mb-6">
+
       <div class="flex items-center justify-between flex-wrap gap-4">
+
         <div class="flex items-center gap-4">
-          <img src="rakib.png" alt="MD Rakib"
+
+          <img
+            src="rakib.png"
+            alt="MD Rakib"
             onerror="this.src='https://ui-avatars.com/api/?name=MD+Rakib&background=3b82f6&color=fff&size=64'"
-            class="w-16 h-16 rounded-full object-cover border-2 border-blue-500 shadow" />
+            class="w-16 h-16 rounded-full object-cover border-2 border-blue-500 shadow"
+          />
+
           <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-white">FB Post Collector</h1>
-            <p class="text-gray-400 mt-1 text-sm">Powered by MD Rakib</p>
+            <h1 class="text-2xl md:text-3xl font-bold text-white">
+              FB Post Collector
+            </h1>
+
+            <p class="text-gray-400 mt-1 text-sm">
+              Powered by MD Rakib
+            </p>
           </div>
+
         </div>
+
         <div class="flex items-center gap-3">
-          <span id="api-status" class="text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300">
+
+          <span
+            id="api-status"
+            class="text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300"
+          >
             ⏳ Connecting...
           </span>
-          <button onclick="toggleTheme()" id="theme-btn"
-            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-all">🌙</button>
+
+          <button
+            onclick="toggleTheme()"
+            id="theme-btn"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-all"
+          >
+            🌙
+          </button>
+
         </div>
+
       </div>
+
     </div>
 
     <!-- STATS -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
       <div class="bg-gray-800 p-5 rounded-2xl shadow">
         <p class="text-gray-400 text-xs mb-1">Owner</p>
         <p class="text-3xl font-bold text-white">1</p>
       </div>
+
       <div class="bg-gray-800 p-5 rounded-2xl shadow">
         <p class="text-gray-400 text-xs mb-1">Employers</p>
         <p class="text-3xl font-bold text-white">1</p>
       </div>
+
       <div class="bg-gray-800 p-5 rounded-2xl shadow">
         <p class="text-gray-400 text-xs mb-1">Total Posts</p>
-        <p id="stat-total" class="text-3xl font-bold text-white">—</p>
+        <p id="stat-total" class="text-3xl font-bold text-white">0</p>
       </div>
+
       <div class="bg-gray-800 p-5 rounded-2xl shadow">
         <p class="text-gray-400 text-xs mb-1">Published</p>
-        <p id="stat-published" class="text-3xl font-bold text-green-400">—</p>
+        <p id="stat-published" class="text-3xl font-bold text-green-400">0</p>
       </div>
+
       <div class="bg-gray-800 p-5 rounded-2xl shadow">
         <p class="text-gray-400 text-xs mb-1">UnPublished</p>
-        <p id="stat-unpublished" class="text-3xl font-bold text-red-400">—</p>
+        <p id="stat-unpublished" class="text-3xl font-bold text-red-400">0</p>
       </div>
+
     </div>
 
     <!-- FILTERS -->
     <div class="bg-gray-800 rounded-3xl shadow p-4 mb-6">
+
       <div class="flex flex-wrap gap-2">
-        <button onclick="setFilter('all')" data-filter="all"
-          class="filter-btn active-filter px-4 py-2 rounded-xl text-sm transition-all">All</button>
-        <button onclick="setFilter('today')" data-filter="today"
-          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">Today</button>
-        <button onclick="setFilter('7days')" data-filter="7days"
-          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">7 Days</button>
-        <button onclick="setFilter('30days')" data-filter="30days"
-          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">30 Days</button>
-        <button onclick="setFilter('published')" data-filter="published"
-          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">Published</button>
-        <button onclick="setFilter('unpublished')" data-filter="unpublished"
-          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all">UnPublished</button>
+
+        <button
+          onclick="setFilter('all')"
+          data-filter="all"
+          class="filter-btn active-filter px-4 py-2 rounded-xl text-sm transition-all"
+        >
+          All
+        </button>
+
+        <button
+          onclick="setFilter('today')"
+          data-filter="today"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all"
+        >
+          Today
+        </button>
+
+        <button
+          onclick="setFilter('7days')"
+          data-filter="7days"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all"
+        >
+          7 Days
+        </button>
+
+        <button
+          onclick="setFilter('30days')"
+          data-filter="30days"
+          class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm transition-all"
+        >
+          30 Days
+        </button>
+
       </div>
+
     </div>
 
     <!-- TABLE CARD -->
     <div class="bg-gray-800 rounded-3xl shadow overflow-hidden">
 
       <div class="p-4 border-b border-gray-700 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-        <h2 class="font-bold text-xl text-white">Latest Posts</h2>
+
+        <h2 class="font-bold text-xl text-white">
+          Latest Posts
+        </h2>
+
         <div class="flex gap-3 flex-wrap">
-          <input id="search-input" type="text"
+
+          <input
+            id="search-input"
+            type="text"
             placeholder="Search caption or Post ID..."
             oninput="renderTable(allPosts)"
-            class="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-blue-500" />
-          <select id="limit-select" onchange="renderTable(allPosts)"
-            class="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2 text-sm">
+            class="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-blue-500"
+          />
+
+          <select
+            id="limit-select"
+            onchange="renderTable(allPosts)"
+            class="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2 text-sm"
+          >
             <option value="10">10 Posts</option>
             <option value="25">25 Posts</option>
             <option value="50">50 Posts</option>
             <option value="100">100 Posts</option>
           </select>
+
         </div>
+
       </div>
 
       <!-- LOADING -->
-      <div id="loading-state" class="flex flex-col items-center justify-center py-20 gap-4">
+      <div
+        id="loading-state"
+        class="flex flex-col items-center justify-center py-20 gap-4"
+      >
+
         <div class="spinner w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-        <p class="text-gray-400 text-sm">Loading... প্রথমবার ৩০ সেকেন্ড লাগতে পারে</p>
+
+        <p class="text-gray-400 text-sm">
+          Loading... প্রথমবার ৩০ সেকেন্ড লাগতে পারে
+        </p>
+
       </div>
 
       <!-- ERROR -->
-      <div id="error-state" class="hidden flex-col items-center justify-center py-16 gap-4 text-center px-6">
+      <div
+        id="error-state"
+        class="hidden flex-col items-center justify-center py-16 gap-4 text-center px-6"
+      >
+
         <div class="text-5xl">⚠️</div>
-        <p class="text-red-400 font-semibold">API সংযোগ হয়নি</p>
-        <p id="error-message" class="text-gray-400 text-sm max-w-sm"></p>
-        <button onclick="loadPosts()"
-          class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition-all text-sm">
+
+        <p class="text-red-400 font-semibold">
+          API সংযোগ হয়নি
+        </p>
+
+        <p
+          id="error-message"
+          class="text-gray-400 text-sm max-w-sm"
+        ></p>
+
+        <button
+          onclick="loadPosts()"
+          class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition-all text-sm"
+        >
           🔄 আবার চেষ্টা করো
         </button>
+
       </div>
 
       <!-- EMPTY -->
-      <div id="empty-state" class="hidden flex-col items-center justify-center py-16 gap-3">
+      <div
+        id="empty-state"
+        class="hidden flex-col items-center justify-center py-16 gap-3"
+      >
+
         <div class="text-5xl">📭</div>
-        <p class="text-gray-400 text-sm">কোনো post পাওয়া যায়নি</p>
+
+        <p class="text-gray-400 text-sm">
+          কোনো post পাওয়া যায়নি
+        </p>
+
       </div>
 
       <!-- TABLE -->
       <div id="table-wrapper" class="hidden overflow-x-auto">
+
         <table class="w-full min-w-[800px]">
+
           <thead class="bg-gray-700 text-gray-300 text-sm">
+
             <tr>
+
               <th class="text-left p-4">Image</th>
               <th class="text-left p-4">Caption</th>
               <th class="text-left p-4">Time</th>
               <th class="text-left p-4">Status</th>
               <th class="text-left p-4">Post ID</th>
               <th class="text-left p-4">Action</th>
+
             </tr>
+
           </thead>
+
           <tbody id="posts-table"></tbody>
+
         </table>
+
       </div>
 
-      <!-- BOTTOM BUTTONS -->
+      <!-- BOTTOM -->
       <div class="p-6 border-t border-gray-700">
+
         <div class="flex flex-wrap justify-center gap-4">
-          <button onclick="loadPosts()"
-            class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-2xl transition-all text-sm">
+
+          <button
+            onclick="loadPosts()"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-2xl transition-all text-sm"
+          >
             🔄 Refresh
           </button>
-          <button onclick="exportCSV()"
-            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl transition-all text-sm">
+
+          <button
+            onclick="exportCSV()"
+            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl transition-all text-sm"
+          >
             📥 Export CSV
           </button>
+
         </div>
+
       </div>
 
     </div>
+
   </div>
 
   <!-- TOAST -->
-  <div id="toast"
-    class="fixed bottom-6 right-6 bg-gray-700 text-white px-5 py-3 rounded-2xl shadow-xl text-sm opacity-0 pointer-events-none transition-opacity duration-300">
-  </div>
+  <div
+    id="toast"
+    class="fixed bottom-6 right-6 bg-gray-700 text-white px-5 py-3 rounded-2xl shadow-xl text-sm opacity-0 pointer-events-none transition-opacity duration-300"
+  ></div>
 
   <script>
+
     const API_BASE = "https://fb-multi-tenant-saas.onrender.com"
-    const TOKEN    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODEzODU0MDB9.hixoY-R1tARXWAnpPcbh1sX4PnguZaILXoRpjsK_vEs"
+
+    const TOKEN = "PASTE_YOUR_NEW_TOKEN_HERE"
 
     let allPosts = []
+
     let currentFilter = 'all'
+
     let isDark = true
 
-    // ✅ FIX: Flexible status check — handles "published", true, 1, "1", "active", "PUBLISHED"
-    function isPublished(status) {
-      if (status === null || status === undefined) return false
-      const s = String(status).toLowerCase().trim()
-      return s === 'published' || s === 'true' || s === '1' || s === 'active' || s === 'yes'
-    }
-
     function toggleTheme() {
+
       isDark = !isDark
+
       document.documentElement.classList.toggle('dark', isDark)
+
       document.body.style.background = isDark ? '' : '#f3f4f6'
+
       document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️'
+
     }
 
     function showToast(msg) {
+
       const t = document.getElementById('toast')
+
       t.textContent = msg
+
       t.style.opacity = '1'
+
       setTimeout(() => t.style.opacity = '0', 2500)
+
     }
 
     function copyPostId(id) {
+
       navigator.clipboard.writeText(id)
         .then(() => showToast("✅ Copied: " + id))
         .catch(() => showToast("❌ Copy failed"))
+
     }
 
     function setFilter(filter) {
+
       currentFilter = filter
+
       document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.className = 'filter-btn px-4 py-2 rounded-xl text-sm transition-all ' +
-          (btn.dataset.filter === filter ? 'active-filter' : 'inactive-filter')
+
+        btn.className =
+          'filter-btn px-4 py-2 rounded-xl text-sm transition-all ' +
+          (btn.dataset.filter === filter
+            ? 'active-filter'
+            : 'inactive-filter')
+
       })
+
       renderTable(allPosts)
+
     }
 
     function showState(state) {
-      ['loading-state','error-state','empty-state','table-wrapper'].forEach(id => {
+
+      ['loading-state','error-state','empty-state','table-wrapper']
+      .forEach(id => {
+
         document.getElementById(id).classList.add('hidden')
+
         document.getElementById(id).classList.remove('flex')
+
       })
+
       const el = document.getElementById(
-        state==='loading' ? 'loading-state' :
-        state==='error'   ? 'error-state' :
-        state==='empty'   ? 'empty-state' : 'table-wrapper'
+        state === 'loading'
+          ? 'loading-state'
+          : state === 'error'
+          ? 'error-state'
+          : state === 'empty'
+          ? 'empty-state'
+          : 'table-wrapper'
       )
+
       el.classList.remove('hidden')
-      if (state !== 'table') el.classList.add('flex')
+
+      if (state !== 'table') {
+        el.classList.add('flex')
+      }
+
     }
 
     function renderTable(posts) {
-      const search = document.getElementById('search-input').value.toLowerCase()
-      const limit  = parseInt(document.getElementById('limit-select').value)
-      const now    = new Date()
 
-      let filtered = posts.filter(post => {
-        const cap = (post.caption || '').toLowerCase()
-        const pid = (post.post_id  || '').toLowerCase()
-        if (search && !cap.includes(search) && !pid.includes(search)) return false
+      const search =
+        document.getElementById('search-input').value.toLowerCase()
 
-        if (currentFilter === 'today')
-          return new Date(post.created_time).toDateString() === now.toDateString()
-        if (currentFilter === '7days')
-          return (now - new Date(post.created_time)) <= 7*24*60*60*1000
-        if (currentFilter === '30days')
-          return (now - new Date(post.created_time)) <= 30*24*60*60*1000
-        if (currentFilter === 'published')   return isPublished(post.status)
-        if (currentFilter === 'unpublished') return !isPublished(post.status)
+      const limit =
+        parseInt(document.getElementById('limit-select').value)
+
+      const now = new Date()
+
+      // ✅ Latest post first
+      let sortedPosts = [...posts].sort((a, b) => {
+        return new Date(b.created_time || 0) -
+               new Date(a.created_time || 0)
+      })
+
+      let filtered = sortedPosts.filter(post => {
+
+        const cap =
+          (post.caption || '').toLowerCase()
+
+        const pid =
+          (post.post_id || '').toLowerCase()
+
+        if (
+          search &&
+          !cap.includes(search) &&
+          !pid.includes(search)
+        ) {
+          return false
+        }
+
+        if (currentFilter === 'today') {
+          return new Date(post.created_time)
+            .toDateString() === now.toDateString()
+        }
+
+        if (currentFilter === '7days') {
+          return (
+            now - new Date(post.created_time)
+          ) <= 7 * 24 * 60 * 60 * 1000
+        }
+
+        if (currentFilter === '30days') {
+          return (
+            now - new Date(post.created_time)
+          ) <= 30 * 24 * 60 * 60 * 1000
+        }
+
         return true
+
       }).slice(0, limit)
 
-      if (!filtered.length) { showState('empty'); return }
+      if (!filtered.length) {
+
+        showState('empty')
+
+        return
+
+      }
+
       showState('table')
 
-      document.getElementById('posts-table').innerHTML = filtered.map(post => `
+      document.getElementById('posts-table').innerHTML =
+      filtered.map(post => `
+
         <tr class="border-b border-gray-700 hover:bg-gray-700 transition-all fade-in">
+
           <td class="p-4">
-            <img src="${post.image_url || 'https://placehold.co/64x64/374151/9ca3af?text=No'}"
+
+            <img
+              src="${post.image_url || 'https://placehold.co/64x64/374151/9ca3af?text=No'}"
               onerror="this.src='https://placehold.co/64x64/374151/9ca3af?text=No'"
-              class="w-14 h-14 rounded-xl object-cover" />
+              class="w-14 h-14 rounded-xl object-cover"
+            />
+
           </td>
+
           <td class="p-4 max-w-xs text-gray-300 text-sm">
-            ${post.caption
-              ? post.caption.substring(0,100)+(post.caption.length>100?'...':'')
-              : '<span class="text-gray-500">No Caption</span>'}
+
+            ${
+              post.caption
+                ? post.caption.substring(0, 100) +
+                  (post.caption.length > 100 ? '...' : '')
+                : '<span class="text-gray-500">No Caption</span>'
+            }
+
           </td>
-          <td class="p-4 whitespace-nowrap text-gray-400 text-xs">${post.created_time||'—'}</td>
+
+          <td class="p-4 whitespace-nowrap text-gray-400 text-xs">
+
+            ${post.created_time || '—'}
+
+          </td>
+
+          <!-- ✅ Always Published -->
           <td class="p-4">
-            <span class="px-2 py-1 rounded-full text-xs font-medium ${
-              isPublished(post.status)
-                ? 'bg-green-900 text-green-300'
-                : 'bg-red-900 text-red-300'}">
-              ${isPublished(post.status) ? '✅ Published' : '❌ Unpublished'}
+
+            <span class="bg-green-900 text-green-300 px-2 py-1 rounded-full text-xs font-medium">
+              ✅ Published
             </span>
+
           </td>
-          <td class="p-4 font-mono text-xs text-gray-400 max-w-[100px] truncate">${post.post_id||'—'}</td>
+
+          <td class="p-4 font-mono text-xs text-gray-400 max-w-[100px] truncate">
+
+            ${post.post_id || '—'}
+
+          </td>
+
           <td class="p-4">
-            <button onclick="copyPostId('${post.post_id}')"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs transition-all">
+
+            <button
+              onclick="copyPostId('${post.post_id}')"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs transition-all"
+            >
               Copy ID
             </button>
+
           </td>
+
         </tr>
+
       `).join('')
 
-      // ✅ FIX: Use isPublished() for stats too
-      const pub = posts.filter(p => isPublished(p.status)).length
-      document.getElementById('stat-total').textContent       = posts.length
-      document.getElementById('stat-published').textContent   = pub
-      document.getElementById('stat-unpublished').textContent = posts.length - pub
+      // ✅ Stats
+      document.getElementById('stat-total').textContent =
+        sortedPosts.length
+
+      document.getElementById('stat-published').textContent =
+        sortedPosts.length
+
+      document.getElementById('stat-unpublished').textContent =
+        0
+
     }
 
     async function loadPosts() {
+
       showState('loading')
+
       const s = document.getElementById('api-status')
+
       s.textContent = '⏳ Connecting...'
-      s.className   = 'text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300'
+
+      s.className =
+        'text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300'
 
       try {
-        const res = await fetch(`${API_BASE}/posts/2`, {
-          headers: { Authorization: `Bearer ${TOKEN}` }
-        })
-        if (!res.ok) throw new Error(`Server error: ${res.status}`)
-        const data = await res.json()
-        allPosts = Array.isArray(data) ? data : (data.posts || [])
 
-        // Debug: console-এ দেখো কী আসছে
-        if (allPosts.length > 0) {
-          console.log("✅ Sample post status value:", allPosts[0].status, "| Type:", typeof allPosts[0].status)
+        const res = await fetch(`${API_BASE}/posts/2`, {
+
+          headers: {
+            Authorization: `Bearer ${TOKEN}`
+          }
+
+        })
+
+        if (!res.ok) {
+          throw new Error(`Server error: ${res.status}`)
         }
+
+        const data = await res.json()
+
+        allPosts = Array.isArray(data)
+          ? data
+          : (data.posts || [])
 
         s.textContent = '🟢 Connected'
-        s.className   = 'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'
+
+        s.className =
+          'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'
+
         renderTable(allPosts)
+
       } catch(err) {
+
         console.error(err)
+
         s.textContent = '🔴 Offline'
-        s.className   = 'text-xs px-3 py-1 rounded-full bg-red-900 text-red-300'
+
+        s.className =
+          'text-xs px-3 py-1 rounded-full bg-red-900 text-red-300'
+
         let msg = err.message
-        if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('failed')) {
-          msg = 'Render server ঘুমিয়ে আছে। ৩০ সেকেন্ড পর 🔄 Refresh চাপো। অথবা main.py CORS fix deploy করোনি।'
+
+        if (
+          msg.toLowerCase().includes('fetch') ||
+          msg.toLowerCase().includes('failed')
+        ) {
+
+          msg =
+            'Render server ঘুমিয়ে আছে। ৩০ সেকেন্ড পর Refresh চাপো।'
+
         }
+
         document.getElementById('error-message').textContent = msg
+
         showState('error')
+
       }
+
     }
 
     function exportCSV() {
-      if (!allPosts.length) { showToast("⚠️ কোনো data নেই"); return }
-      const csv = ['Post ID,Caption,Time,Status,Image URL',
+
+      if (!allPosts.length) {
+
+        showToast("⚠️ কোনো data নেই")
+
+        return
+
+      }
+
+      const csv = [
+
+        'Post ID,Caption,Time,Image URL',
+
         ...allPosts.map(p =>
-          [p.post_id, (p.caption||'').replace(/"/g,'""'), p.created_time, p.status, p.image_url]
-          .map(v=>`"${v||''}"`).join(',')
+
+          [
+            p.post_id,
+            (p.caption || '').replace(/"/g,'""'),
+            p.created_time,
+            p.image_url
+          ]
+          .map(v => `"${v || ''}"`)
+          .join(',')
+
         )
+
       ].join('\n')
+
       const a = Object.assign(document.createElement('a'), {
-        href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
+
+        href: URL.createObjectURL(
+          new Blob([csv], { type:'text/csv' })
+        ),
+
         download: 'fb_posts.csv'
+
       })
+
       a.click()
+
       showToast("✅ CSV exported!")
+
     }
 
     loadPosts()
+
   </script>
 
 </body>
