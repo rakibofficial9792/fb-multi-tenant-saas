@@ -165,3 +165,24 @@ def get_posts(client_id: int):
         "success": True,
         "posts": result.data
     }
+
+@app.post("/employee-login")
+def employee_login(data: dict):
+
+    username = data.get("username")
+    password = data.get("password")
+
+    result = supabase.table("employees").select("*").match({
+        "username": username,
+        "password": password
+    }).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Invalid employee login")
+
+    employee = result.data[0]
+
+    return {
+        "success": True,
+        "employee": employee
+    }
