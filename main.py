@@ -81,7 +81,10 @@ class ClientLogin(BaseModel):
 class EmployeeLogin(BaseModel):
     username: str
     password: str
-
+class CreateEmployee(BaseModel):
+    employee_name: str
+    username: str
+    password: str
 
 @app.get("/")
 def home():
@@ -170,6 +173,49 @@ def employee_login(data: EmployeeLogin):
         "success": True,
         "token": token,
         "employee": user_data
+    }
+@app.post("/create-employee/{client_id}")
+def create_employee(
+    client_id: int,
+    data: CreateEmployee,
+    user=Depends(verify_token)
+):
+
+    if user["client_id"] != client_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    existing = supabase.table("employees").select("*").eq(
+        "username",
+        data.username
+    ).execute()
+
+    if existing.data:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists"
+        )
+
+    hashed_password = pwd_context.hash(
+        data.password
+    )
+
+    new_employee = {
+        "client_id": client_id,
+        "employee_name": data.employee_name,
+        "username": data.username,
+        "password": hashed_password
+    }
+
+    result = supabase.table("employees").insert(
+        new_employee
+    ).execute()
+
+    return {
+        "success": True,
+        "employee": result.data[0]
     }
 
 
