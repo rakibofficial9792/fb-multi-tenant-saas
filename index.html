@@ -296,15 +296,23 @@
 
   const API_BASE = "https://fb-multi-tenant-saas.onrender.com"
 
+  function copyPostId(id) {
+
+    navigator.clipboard.writeText(id)
+
+    alert("Post ID Copied: " + id)
+
+  }
+
   async function loadPosts() {
 
     try {
 
       const response = await fetch(
-         `${API_BASE}/employee-posts/2`,
+        `${API_BASE}/posts/2`,
         {
           headers: {
-            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODEzNzk4MzZ9.bLD_vqtUbbTTWOGSyVoq3UU78RnsgoGWIdxvSNOPYPE"
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODEzODU0MDB9.hixoY-R1tARXWAnpPcbh1sX4PnguZaILXoRpjsK_vEs"
           }
         }
       )
@@ -315,18 +323,16 @@
 
       table.innerHTML = ""
 
-      data.posts.forEach(post => {
+      data.forEach(post => {
 
         table.innerHTML += `
           <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
 
             <td class="p-4">
-
               <img
                 src="${post.image_url || 'https://placehold.co/100x100'}"
                 class="w-20 h-20 rounded-2xl object-cover"
               />
-
             </td>
 
             <td class="p-4 max-w-sm text-gray-900 dark:text-white">
@@ -338,11 +344,9 @@
             </td>
 
             <td class="p-4">
-
               <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
                 Published
               </span>
-
             </td>
 
             <td class="p-4 whitespace-nowrap text-gray-900 dark:text-white">
@@ -354,14 +358,12 @@
             </td>
 
             <td class="p-4">
-
               <button
                 onclick="copyPostId('${post.post_id}')"
                 class="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl"
               >
                 Copy ID
               </button>
-
             </td>
 
           </tr>
@@ -376,7 +378,6 @@
     }
 
   }
-
 
   loadPosts()
 
