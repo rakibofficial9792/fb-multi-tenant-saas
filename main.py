@@ -186,3 +186,28 @@ def employee_login(data: dict):
         "success": True,
         "employee": employee
     }
+
+@app.get("/employee-posts/{employee_id}")
+def employee_posts(employee_id: int):
+
+    employee_result = supabase.table("employees").select("*").eq(
+        "id",
+        employee_id
+    ).execute()
+
+    if not employee_result.data:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    employee = employee_result.data[0]
+
+    posts_result = supabase.table("posts").select("*").eq(
+        "client_id",
+        employee["client_id"]
+    ).execute()
+
+    return {
+        "success": True,
+        "employee": employee["employee_name"],
+        "client_id": employee["client_id"],
+        "posts": posts_result.data
+    }
