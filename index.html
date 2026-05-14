@@ -185,6 +185,13 @@
     let currentFilter = 'all'
     let isDark = true
 
+    // ✅ FIX: Flexible status check — handles "published", true, 1, "1", "active", "PUBLISHED"
+    function isPublished(status) {
+      if (status === null || status === undefined) return false
+      const s = String(status).toLowerCase().trim()
+      return s === 'published' || s === 'true' || s === '1' || s === 'active' || s === 'yes'
+    }
+
     function toggleTheme() {
       isDark = !isDark
       document.documentElement.classList.toggle('dark', isDark)
@@ -237,14 +244,15 @@
         const cap = (post.caption || '').toLowerCase()
         const pid = (post.post_id  || '').toLowerCase()
         if (search && !cap.includes(search) && !pid.includes(search)) return false
+
         if (currentFilter === 'today')
           return new Date(post.created_time).toDateString() === now.toDateString()
         if (currentFilter === '7days')
           return (now - new Date(post.created_time)) <= 7*24*60*60*1000
         if (currentFilter === '30days')
           return (now - new Date(post.created_time)) <= 30*24*60*60*1000
-        if (currentFilter === 'published')   return post.status === 'published'
-        if (currentFilter === 'unpublished') return post.status !== 'published'
+        if (currentFilter === 'published')   return isPublished(post.status)
+        if (currentFilter === 'unpublished') return !isPublished(post.status)
         return true
       }).slice(0, limit)
 
@@ -266,10 +274,10 @@
           <td class="p-4 whitespace-nowrap text-gray-400 text-xs">${post.created_time||'—'}</td>
           <td class="p-4">
             <span class="px-2 py-1 rounded-full text-xs font-medium ${
-              post.status==='published'
+              isPublished(post.status)
                 ? 'bg-green-900 text-green-300'
                 : 'bg-red-900 text-red-300'}">
-              ${post.status==='published' ? '✅ Published' : '❌ Unpublished'}
+              ${isPublished(post.status) ? '✅ Published' : '❌ Unpublished'}
             </span>
           </td>
           <td class="p-4 font-mono text-xs text-gray-400 max-w-[100px] truncate">${post.post_id||'—'}</td>
@@ -282,7 +290,8 @@
         </tr>
       `).join('')
 
-      const pub = posts.filter(p => p.status==='published').length
+      // ✅ FIX: Use isPublished() for stats too
+      const pub = posts.filter(p => isPublished(p.status)).length
       document.getElementById('stat-total').textContent       = posts.length
       document.getElementById('stat-published').textContent   = pub
       document.getElementById('stat-unpublished').textContent = posts.length - pub
@@ -301,6 +310,12 @@
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
         const data = await res.json()
         allPosts = Array.isArray(data) ? data : (data.posts || [])
+
+        // Debug: console-এ দেখো কী আসছে
+        if (allPosts.length > 0) {
+          console.log("✅ Sample post status value:", allPosts[0].status, "| Type:", typeof allPosts[0].status)
+        }
+
         s.textContent = '🟢 Connected'
         s.className   = 'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'
         renderTable(allPosts)
