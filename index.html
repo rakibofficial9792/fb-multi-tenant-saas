@@ -1,22 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FB Post Collector</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = { darkMode: 'class' }
-  </script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
   <style>
     * { font-family: 'DM Sans', sans-serif; }
     h1, h2, .font-display { font-family: 'Syne', sans-serif; }
-
-    :root {
-      --accent: #3b82f6;
-      --accent-glow: rgba(59,130,246,0.25);
-    }
+    :root { --accent: #3b82f6; --accent-glow: rgba(59,130,246,0.25); }
 
     body {
       background: #0a0f1e;
@@ -25,190 +20,97 @@
         radial-gradient(ellipse 40% 30% at 90% 80%, rgba(99,102,241,0.08) 0%, transparent 60%);
       min-height: 100vh;
     }
-
-    /* Light mode */
     html:not(.dark) body {
       background: #f0f4ff;
-      background-image:
-        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(59,130,246,0.1) 0%, transparent 70%);
+      background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(59,130,246,0.1) 0%, transparent 70%);
       color: #0f172a;
     }
+    .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); backdrop-filter: blur(16px); }
+    html:not(.dark) .glass { background: rgba(255,255,255,0.7); border: 1px solid rgba(59,130,246,0.15); }
 
-    /* Glassmorphism cards */
-    .glass {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      backdrop-filter: blur(16px);
-    }
-    html:not(.dark) .glass {
-      background: rgba(255,255,255,0.7);
-      border: 1px solid rgba(59,130,246,0.15);
-    }
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 0 24px var(--accent-glow); }
 
-    /* Stat card glow on hover */
-    .stat-card {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 24px var(--accent-glow);
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.75s linear infinite; border-color: var(--accent) transparent transparent transparent; }
 
-    /* Spinner */
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .spinner {
-      animation: spin 0.75s linear infinite;
-      border-color: var(--accent) transparent transparent transparent;
-    }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeSlide 0.25s ease forwards; }
 
-    /* Fade in rows */
-    @keyframes fadeSlide {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in {
-      animation: fadeSlide 0.25s ease forwards;
-    }
+    .filter-btn { transition: all 0.15s ease; border: 1px solid transparent; }
+    .active-filter { background: var(--accent); color: #fff; border-color: rgba(255,255,255,0.15); box-shadow: 0 0 16px var(--accent-glow); }
+    .inactive-filter { background: rgba(255,255,255,0.05); color: #94a3b8; border-color: rgba(255,255,255,0.06); }
+    .inactive-filter:hover { background: rgba(59,130,246,0.15); color: #93c5fd; border-color: rgba(59,130,246,0.3); }
 
-    /* Filter buttons */
-    .filter-btn {
-      transition: all 0.15s ease;
-      border: 1px solid transparent;
-    }
-    .active-filter {
-      background: var(--accent);
-      color: #fff;
-      border-color: rgba(255,255,255,0.15);
-      box-shadow: 0 0 16px var(--accent-glow);
-    }
-    .inactive-filter {
-      background: rgba(255,255,255,0.05);
-      color: #94a3b8;
-      border-color: rgba(255,255,255,0.06);
-    }
-    html:not(.dark) .inactive-filter {
-      background: rgba(0,0,0,0.05);
-      color: #475569;
-    }
-    .inactive-filter:hover {
-      background: rgba(59,130,246,0.15);
-      color: #93c5fd;
-      border-color: rgba(59,130,246,0.3);
-    }
-
-    /* Table row hover */
     tr.post-row { transition: background 0.15s; }
     tr.post-row:hover { background: rgba(59,130,246,0.06); }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
 
-    /* Toast */
-    #toast {
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      transform: translateY(8px);
-    }
-    #toast.show {
-      opacity: 1 !important;
-      transform: translateY(0);
-    }
+    #toast { transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(8px); }
+    #toast.show { opacity: 1 !important; transform: translateY(0); }
 
-    /* Pulse dot */
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     .pulse { animation: pulse 1.8s ease-in-out infinite; }
 
-    /* Avatar ring */
-    .avatar-ring {
-      box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--accent-glow);
-    }
+    .avatar-ring { box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--accent-glow); }
 
-    /* Button */
-    .btn-primary {
-      background: var(--accent);
-      transition: all 0.15s ease;
-      box-shadow: 0 4px 16px var(--accent-glow);
-    }
-    .btn-primary:hover {
-      filter: brightness(1.1);
-      box-shadow: 0 6px 24px var(--accent-glow);
-    }
+    .btn-primary { background: var(--accent); transition: all 0.15s ease; box-shadow: 0 4px 16px var(--accent-glow); }
+    .btn-primary:hover { filter: brightness(1.1); }
     .btn-primary:active { transform: scale(0.97); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-ghost {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: all 0.15s ease;
-    }
-    html:not(.dark) .btn-ghost {
-      background: rgba(0,0,0,0.05);
-      border-color: rgba(0,0,0,0.1);
-    }
+    .btn-ghost { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); transition: all 0.15s ease; }
     .btn-ghost:hover { background: rgba(255,255,255,0.1); }
 
-    /* Input */
-    .input-field {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    html:not(.dark) .input-field {
-      background: rgba(255,255,255,0.8);
-      border-color: rgba(59,130,246,0.2);
-      color: #0f172a;
-    }
-    .input-field:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
+    .input-field { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); transition: border-color 0.15s, box-shadow 0.15s; }
+    html:not(.dark) .input-field { background: rgba(255,255,255,0.8); border-color: rgba(59,130,246,0.2); color: #0f172a; }
+    .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 
-    /* Logo shimmer */
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-    .logo-text {
-      background: linear-gradient(90deg, #60a5fa, #a78bfa, #60a5fa);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shimmer 4s linear infinite;
-    }
+    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+    .logo-text { background: linear-gradient(90deg, #60a5fa, #a78bfa, #60a5fa); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 4s linear infinite; }
 
-    /* Image hover zoom */
-    .post-img {
-      transition: transform 0.2s ease;
-    }
+    .post-img { transition: transform 0.2s ease; }
     .post-img:hover { transform: scale(1.08); }
 
-    html:not(.dark) .text-gray-300 { color: #334155; }
-    html:not(.dark) .text-gray-400 { color: #64748b; }
-    html:not(.dark) .text-gray-500 { color: #94a3b8; }
-    html:not(.dark) #posts-table tr { border-color: rgba(0,0,0,0.06); }
+    #login-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.97); backdrop-filter: blur(20px); z-index: 100; display: flex; align-items: center; justify-content: center; }
+    .login-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(24px); border-radius: 24px; padding: 36px; width: 100%; max-width: 400px; }
   </style>
 </head>
 <body class="text-white min-h-screen">
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-display font-bold logo-text mb-2">FB Post Collector</h1>
+      <p class="text-gray-400 text-sm">Powered by MD Rakib</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Username</label>
+        <input id="login-user" type="text" placeholder="Enter username" class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-gray-600"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Password</label>
+        <input id="login-pass" type="password" placeholder="Enter password" class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-gray-600" onkeydown="if(event.key==='Enter') doLogin()"/>
+      </div>
+      <button onclick="doLogin()" id="login-btn" class="btn-primary w-full py-3 rounded-xl font-semibold text-white">Login</button>
+      <p id="login-err" class="text-red-400 text-sm text-center hidden"></p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
 <div class="max-w-7xl mx-auto p-4 md:p-6 space-y-5">
 
-  <!-- ═══ HEADER ═══ -->
+  <!-- HEADER -->
   <div class="glass rounded-2xl p-5">
     <div class="flex items-center justify-between flex-wrap gap-4">
-
       <div class="flex items-center gap-4">
         <div class="relative">
-          <img
-            src="rakib.png"
-            onerror="this.src='https://ui-avatars.com/api/?name=MD+Rakib&background=3b82f6&color=fff&size=64'"
-            class="w-14 h-14 rounded-xl object-cover avatar-ring"
-          />
+          <img src="rakib.png" onerror="this.src='https://ui-avatars.com/api/?name=MD+Rakib&background=3b82f6&color=fff&size=64'" class="w-14 h-14 rounded-xl object-cover avatar-ring"/>
           <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-gray-900 pulse"></span>
         </div>
         <div>
@@ -216,120 +118,115 @@
           <p class="text-gray-400 text-xs mt-0.5">Powered by MD Rakib</p>
         </div>
       </div>
-
       <div class="flex items-center gap-3">
         <div id="api-status" class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-yellow-300">
-          <span class="w-2 h-2 rounded-full bg-yellow-400 pulse"></span>
-          Connecting...
+          <span class="w-2 h-2 rounded-full bg-yellow-400 pulse"></span>Ready
         </div>
-        <button onclick="toggleTheme()" id="theme-btn"
-          class="btn-ghost px-3 py-2 rounded-xl text-sm">
-          🌙
-        </button>
+        <button onclick="toggleConfig()" class="btn-ghost px-3 py-2 rounded-xl text-sm" title="Settings">⚙️</button>
+        <button onclick="toggleTheme()" id="theme-btn" class="btn-ghost px-3 py-2 rounded-xl text-sm">🌙</button>
+        <button onclick="doLogout()" class="btn-ghost px-3 py-2 rounded-xl text-sm text-red-400">🚪</button>
       </div>
+    </div>
 
+    <!-- CONFIG -->
+    <div id="config-panel" class="hidden mt-5 pt-5 border-t border-white/5">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-1">
+          <label class="block text-xs text-gray-400 mb-1.5">Access Token</label>
+          <input id="fb-token" type="password" placeholder="EAAxxxxxxxx" class="input-field w-full px-4 py-2.5 rounded-xl text-white text-sm placeholder-gray-600"/>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5">Page ID</label>
+          <input id="fb-page-id" type="text" placeholder="123456789" class="input-field w-full px-4 py-2.5 rounded-xl text-white text-sm placeholder-gray-600"/>
+        </div>
+        <div class="flex items-end">
+          <button onclick="saveConfig()" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">💾 Save & Fetch</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ═══ STATS ═══ -->
+  <!-- STATS -->
   <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
-
     <div class="stat-card glass rounded-2xl p-4 text-center">
-      <p class="text-gray-400 text-xs mb-1">Owner</p>
-      <p class="text-2xl font-display font-bold">1</p>
+      <p class="text-gray-400 text-xs mb-1">Total</p>
+      <p id="stat-total" class="text-2xl font-display font-bold">0</p>
     </div>
-
-    <div class="stat-card glass rounded-2xl p-4 text-center">
-      <p class="text-gray-400 text-xs mb-1">Employees</p>
-      <p class="text-2xl font-display font-bold">1</p>
-    </div>
-
-    <div class="stat-card glass rounded-2xl p-4 text-center">
-      <p class="text-gray-400 text-xs mb-1">Total Posts</p>
-      <p id="stat-total" class="text-2xl font-display font-bold text-white">0</p>
-    </div>
-
     <div class="stat-card glass rounded-2xl p-4 text-center">
       <p class="text-gray-400 text-xs mb-1">Published</p>
       <p id="stat-published" class="text-2xl font-display font-bold text-emerald-400">0</p>
     </div>
-
     <div class="stat-card glass rounded-2xl p-4 text-center">
       <p class="text-gray-400 text-xs mb-1">Scheduled</p>
       <p id="stat-scheduled" class="text-2xl font-display font-bold text-blue-400">0</p>
     </div>
-
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">Today</p>
+      <p id="stat-today" class="text-2xl font-display font-bold text-yellow-400">0</p>
+    </div>
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">7 Days</p>
+      <p id="stat-7days" class="text-2xl font-display font-bold text-purple-400">0</p>
+    </div>
     <div class="stat-card glass rounded-2xl p-4 text-center">
       <p class="text-gray-400 text-xs mb-1">This Month</p>
       <p id="stat-month" class="text-2xl font-display font-bold text-amber-400">0</p>
     </div>
-
   </div>
 
-  <!-- ═══ FILTER ═══ -->
+  <!-- FILTER -->
   <div class="glass rounded-2xl p-4">
     <div class="flex flex-wrap gap-2">
       <button onclick="setFilter('all')"       data-filter="all"       class="filter-btn active-filter px-4 py-2 rounded-xl text-sm font-medium">All</button>
+      <button onclick="setFilter('published')" data-filter="published" class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Published</button>
+      <button onclick="setFilter('scheduled')" data-filter="scheduled" class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Scheduled</button>
       <button onclick="setFilter('today')"     data-filter="today"     class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Today</button>
       <button onclick="setFilter('7days')"     data-filter="7days"     class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">7 Days</button>
       <button onclick="setFilter('30days')"    data-filter="30days"    class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">30 Days</button>
-      <button onclick="setFilter('published')" data-filter="published" class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Published</button>
-      <button onclick="setFilter('scheduled')" data-filter="scheduled" class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Scheduled</button>
     </div>
   </div>
 
-  <!-- ═══ TABLE CARD ═══ -->
+  <!-- TABLE -->
   <div class="glass rounded-2xl overflow-hidden">
-
-    <!-- Toolbar -->
     <div class="p-4 border-b border-white/5 flex flex-col md:flex-row gap-3 justify-between items-start md:items-center">
-      <h2 class="text-lg font-display font-semibold">Latest Posts</h2>
+      <h2 class="text-lg font-display font-semibold">Posts</h2>
       <div class="flex gap-3 flex-wrap w-full md:w-auto">
-        <input
-          id="search-input"
-          type="text"
-          placeholder="Search caption or Post ID..."
-          oninput="renderTable(allPosts)"
-          class="input-field rounded-xl px-4 py-2 text-sm w-full md:w-64 text-white placeholder-gray-500"
-        />
-        <select
-          id="limit-select"
-          onchange="renderTable(allPosts)"
-          class="input-field rounded-xl px-4 py-2 text-sm text-white"
-        >
+        <input id="search-input" type="text" placeholder="Search caption or Post ID..." oninput="renderTable()"
+          class="input-field rounded-xl px-4 py-2 text-sm w-full md:w-64 text-white placeholder-gray-500"/>
+        <select id="limit-select" onchange="renderTable()" class="input-field rounded-xl px-4 py-2 text-sm text-white">
           <option value="10">10 Posts</option>
           <option value="25">25 Posts</option>
           <option value="50">50 Posts</option>
-          <option value="100">100 Posts</option>
+          <option value="100" selected>100 Posts</option>
         </select>
       </div>
     </div>
 
-    <!-- Loading -->
-    <div id="loading-state" class="flex flex-col items-center justify-center py-24 gap-4">
+    <div id="loading-state" class="hidden flex-col items-center justify-center py-24 gap-4">
       <div class="spinner w-10 h-10 border-4 rounded-full"></div>
-      <p class="text-gray-500 text-sm">Loading posts...</p>
+      <p class="text-gray-500 text-sm">Fetching posts...</p>
     </div>
 
-    <!-- Error -->
+    <div id="idle-state" class="flex flex-col items-center justify-center py-24 gap-3">
+      <div class="text-5xl">⚡</div>
+      <p class="text-gray-400 font-semibold">Ready to Collect</p>
+      <p class="text-gray-500 text-sm">⚙️ Settings এ Token দিয়ে Collect করুন</p>
+    </div>
+
     <div id="error-state" class="hidden flex-col items-center justify-center py-24 gap-3">
       <div class="text-5xl">⚠️</div>
-      <p class="text-red-400 font-semibold">API Connection Failed</p>
-      <p id="error-message" class="text-gray-500 text-sm"></p>
-      <button onclick="loadPosts()" class="btn-primary px-6 py-2 rounded-xl text-sm font-medium mt-1">
-        🔄 Retry
-      </button>
+      <p class="text-red-400 font-semibold">Failed</p>
+      <p id="error-message" class="text-gray-500 text-sm text-center px-8"></p>
+      <button onclick="collectPosts()" class="btn-primary px-6 py-2 rounded-xl text-sm font-medium mt-1">🔄 Retry</button>
     </div>
 
-    <!-- Empty -->
     <div id="empty-state" class="hidden flex-col items-center justify-center py-24 gap-3">
       <div class="text-5xl">📭</div>
       <p class="text-gray-500 text-sm">No posts found</p>
     </div>
 
-    <!-- Table -->
     <div id="table-wrapper" class="hidden overflow-x-auto">
-      <table class="w-full min-w-[860px]">
+      <table class="w-full min-w-[760px]">
         <thead>
           <tr class="border-b border-white/5 text-xs text-gray-500 uppercase tracking-widest">
             <th class="text-left p-4 font-medium">Image</th>
@@ -344,237 +241,204 @@
       </table>
     </div>
 
-    <!-- Footer Actions -->
     <div class="p-4 border-t border-white/5 flex flex-wrap gap-3 justify-end">
-      <button onclick="exportCSV()" class="btn-ghost px-5 py-2.5 rounded-xl text-sm font-medium">
-        📤 Export CSV
-      </button>
-      <button onclick="loadPosts()" class="btn-ghost px-5 py-2.5 rounded-xl text-sm font-medium">
-        🔄 Refresh
-      </button>
-      <button onclick="collectPosts()" id="collect-btn" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-medium">
-        📥 Collect Posts
-      </button>
+      <button onclick="exportCSV()" class="btn-ghost px-5 py-2.5 rounded-xl text-sm font-medium">📤 Export CSV</button>
+      <button onclick="collectPosts()" id="collect-btn" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-medium">⚡ Collect Posts</button>
     </div>
-
   </div>
-
 </div>
 
-<!-- Toast -->
-<div id="toast"
-  class="fixed bottom-6 right-6 glass px-5 py-3 rounded-2xl text-sm opacity-0 z-50 pointer-events-none">
-</div>
+<div id="toast" class="fixed bottom-6 right-6 glass px-5 py-3 rounded-2xl text-sm opacity-0 z-50 pointer-events-none"></div>
 
 <script>
-const API_BASE = "https://fb-multi-tenant-saas.onrender.com"
-const TOKEN = localStorage.getItem("token") ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODE0MzEzNzJ9.XkP6zWsPcvIxrOqF3IUoywK_nofRpDaFEU7ydd-sphE"
+/* ── Supabase ── */
+const SUPABASE_URL = "https://ahorafoietmflijejvra.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFob3JhZm9pZXRtZmxpamVqdnJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NjQ2NjAsImV4cCI6MjA5NDI0MDY2MH0.zb5BlvgpbkkK6S7mc_oJvKhQfewyNEQaRqSsFOb-VDU";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let allPosts = []
-let currentFilter = 'all'
-let isDark = true
-let toastTimer = null
-
-/* ── Theme ── */
-function toggleTheme() {
-  isDark = !isDark
-  document.documentElement.classList.toggle('dark', isDark)
-  document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️'
-}
-
-/* ── Toast ── */
-function showToast(msg) {
-  const t = document.getElementById('toast')
-  t.textContent = msg
-  t.classList.add('show')
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800)
-}
-
-/* ── Copy ── */
-function copyPostId(id) {
-  navigator.clipboard.writeText(id).then(() => showToast("✅ Post ID Copied"))
-}
-
-/* ── Filter ── */
-function setFilter(filter) {
-  currentFilter = filter
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    const active = btn.dataset.filter === filter
-    btn.className = 'filter-btn px-4 py-2 rounded-xl text-sm font-medium ' +
-      (active ? 'active-filter' : 'inactive-filter')
-  })
-  renderTable(allPosts)
-}
-
-/* ── Show/hide states ── */
-function showState(state) {
-  ['loading-state','error-state','empty-state','table-wrapper'].forEach(id => {
-    const el = document.getElementById(id)
-    el.classList.add('hidden')
-    el.classList.remove('flex')
-  })
-  const map = {
-    loading: 'loading-state',
-    error:   'error-state',
-    empty:   'empty-state',
-    table:   'table-wrapper'
-  }
-  const target = document.getElementById(map[state])
-  target.classList.remove('hidden')
-  if (state !== 'table') target.classList.add('flex')
-}
-
-/* ── Scheduled check ── */
-function isScheduled(post) {
-  if (!post.post_time) return false
-  return new Date(post.post_time).getTime() > Date.now()
-}
-
-/* ── Render table ── */
-function renderTable(posts) {
-  const search = document.getElementById('search-input').value.toLowerCase().trim()
-  const limit  = parseInt(document.getElementById('limit-select').value)
-  const now    = new Date()
-
-  let filtered = posts.filter(post => {
-    const cap = (post.caption  || '').toLowerCase()
-    const pid = (post.post_id  || '').toLowerCase()
-    if (search && !cap.includes(search) && !pid.includes(search)) return false
-
-    const pt = new Date(post.post_time)
-    if (currentFilter === 'today')     return pt.toDateString() === now.toDateString()
-    if (currentFilter === '7days')     return (now - pt) <= 7  * 86400000
-    if (currentFilter === '30days')    return (now - pt) <= 30 * 86400000
-    if (currentFilter === 'published') return !isScheduled(post)
-    if (currentFilter === 'scheduled') return  isScheduled(post)
-    return true
-  }).slice(0, limit)
-
-  if (!filtered.length) { showState('empty'); return }
-
-  showState('table')
-
-  document.getElementById('posts-table').innerHTML = filtered.map((post, i) => {
-    const scheduled = isScheduled(post)
-    const statusBadge = scheduled
-      ? `<span class="inline-flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full text-xs font-medium">
-           <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Scheduled
-         </span>`
-      : `<span class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-medium">
-           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Published
-         </span>`
-
-    const safeId = (post.post_id || '').replace(/'/g, "\\'")
-
-    return `
-      <tr class="post-row border-b border-white/4 fade-in" style="animation-delay:${i * 30}ms">
-        <td class="p-4">
-          <div class="overflow-hidden rounded-xl w-14 h-14">
-            <img
-              src="${post.image_url || 'https://placehold.co/56x56/1e2a3a/60a5fa?text=FB'}"
-              onerror="this.src='https://placehold.co/56x56/1e2a3a/60a5fa?text=FB'"
-              class="post-img w-14 h-14 object-cover"
-            />
-          </div>
-        </td>
-        <td class="p-4 max-w-xs text-sm text-gray-300">
-          ${(post.caption || 'No Caption').substring(0, 100)}${(post.caption || '').length > 100 ? '…' : ''}
-        </td>
-        <td class="p-4 text-xs text-gray-400 whitespace-nowrap">
-          ${post.post_time ? new Date(post.post_time).toLocaleString() : '—'}
-        </td>
-        <td class="p-4">${statusBadge}</td>
-        <td class="p-4 font-mono text-xs text-gray-500">${post.post_id || '—'}</td>
-        <td class="p-4">
-          <button
-            onclick="copyPostId('${safeId}')"
-            class="btn-primary px-3 py-1.5 rounded-lg text-xs font-medium"
-          >Copy ID</button>
-        </td>
-      </tr>
-    `
-  }).join('')
-}
-
-/* ── Collect Posts ── */
-async function collectPosts() {
-  const btn = document.getElementById('collect-btn')
-  btn.disabled = true
-  btn.textContent = '⏳ Collecting...'
-  try {
-    const res  = await fetch(`${API_BASE}/collect-posts/2`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.detail || 'Collect failed')
-    showToast(`✅ ${data.new_saved} new posts saved`)
-    loadPosts()
-  } catch (err) {
-    showToast("❌ " + err.message)
-  } finally {
-    btn.disabled = false
-    btn.textContent = '📥 Collect Posts'
-  }
-}
-
-/* ── Load Posts ── */
-async function loadPosts() {
-  showState('loading')
-  const statusEl = document.getElementById('api-status')
-  try {
-    const res  = await fetch(`${API_BASE}/posts/2`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.detail || 'Failed')
-
-    allPosts = data.posts || []
-
-    document.getElementById('stat-total').textContent     = data.total      || 0
-    document.getElementById('stat-published').textContent = data.published  || 0
-    document.getElementById('stat-scheduled').textContent = data.scheduled  || 0
-    document.getElementById('stat-month').textContent     = data.this_month || 0
-
-    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-400"></span> Connected`
-    statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-green-300'
-
-    renderTable(allPosts)
-
-  } catch (err) {
-    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400 pulse"></span> Offline`
-    statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-red-300'
-    document.getElementById('error-message').textContent = err.message
-    showState('error')
-  }
-}
-
-/* ── Export CSV ── */
-function exportCSV() {
-  if (!allPosts.length) { showToast("⚠️ No data to export"); return }
-
-  const rows = [
-    ['Post ID','Caption','Post Time','Status','Image URL'],
-    ...allPosts.map(p => [
-      p.post_id || '',
-      (p.caption || '').replace(/"/g, '""'),
-      p.post_time || '',
-      isScheduled(p) ? 'Scheduled' : 'Published',
-      p.image_url || ''
-    ])
-  ].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
-
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([rows], { type: 'text/csv' }))
-  a.download = `fb_posts_${new Date().toISOString().slice(0,10)}.csv`
-  a.click()
-  showToast("✅ CSV Exported")
-}
+let allPosts = [], currentFilter = 'all', isDark = true, toastTimer = null;
 
 /* ── Init ── */
-loadPosts()
-setInterval(loadPosts, 30000) // refresh every 30s (10s was too aggressive)
+window.onload = function() {
+  const t = localStorage.getItem('fb_token');
+  const p = localStorage.getItem('fb_page_id');
+  if (t) document.getElementById('fb-token').value = t;
+  if (p) document.getElementById('fb-page-id').value = p;
+  if (localStorage.getItem('logged_in') === 'yes') {
+    document.getElementById('login-overlay').style.display = 'none';
+    if (t && p) collectPosts(); // Auto-fetch on load!
+  }
+};
+
+/* ── Login ── */
+async function doLogin() {
+  const btn  = document.getElementById('login-btn');
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  if (!user || !pass) { showLoginErr('Username & Password required'); return; }
+  btn.disabled = true; btn.textContent = '⏳ Logging in...';
+  const { data, error } = await db.from('owners').select('*').eq('username', user).eq('password', pass);
+  if (error || !data.length) {
+    btn.disabled = false; btn.textContent = 'Login';
+    showLoginErr('❌ Invalid credentials'); return;
+  }
+  localStorage.setItem('logged_in', 'yes');
+  document.getElementById('login-overlay').style.display = 'none';
+  showToast('✅ Welcome back!');
+  const t = localStorage.getItem('fb_token');
+  const p = localStorage.getItem('fb_page_id');
+  if (t && p) collectPosts();
+}
+function showLoginErr(msg) { const e = document.getElementById('login-err'); e.textContent = msg; e.classList.remove('hidden'); }
+function doLogout() { localStorage.removeItem('logged_in'); location.reload(); }
+
+/* ── Config ── */
+function toggleConfig() { document.getElementById('config-panel').classList.toggle('hidden'); }
+function saveConfig() {
+  const token  = document.getElementById('fb-token').value.trim();
+  const pageId = document.getElementById('fb-page-id').value.trim();
+  if (!token || !pageId) { showToast('⚠️ Token & Page ID দিন'); return; }
+  localStorage.setItem('fb_token', token);
+  localStorage.setItem('fb_page_id', pageId);
+  document.getElementById('config-panel').classList.add('hidden');
+  collectPosts();
+}
+
+/* ── ⚡ Collect Posts (Direct FB API — No Backend!) ── */
+async function collectPosts() {
+  const token  = document.getElementById('fb-token').value.trim()   || localStorage.getItem('fb_token');
+  const pageId = document.getElementById('fb-page-id').value.trim() || localStorage.getItem('fb_page_id');
+
+  if (!token || !pageId) {
+    showToast('⚙️ Settings এ Token & Page ID দিন');
+    document.getElementById('config-panel').classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.getElementById('collect-btn');
+  btn.disabled = true; btn.textContent = '⏳ Fetching...';
+  showState('loading');
+
+  const statusEl = document.getElementById('api-status');
+  statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-400 pulse"></span> Fetching...`;
+  statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-yellow-300';
+
+  try {
+    // ⚡ Published + Scheduled একসাথে parallel fetch
+    const [pubRes, schRes] = await Promise.all([
+      fetch(`https://graph.facebook.com/v20.0/${pageId}/feed?fields=id,message,full_picture,permalink_url,created_time&limit=100&access_token=${token}`),
+      fetch(`https://graph.facebook.com/v20.0/${pageId}/scheduled_posts?fields=id,message,full_picture,permalink_url,scheduled_publish_time&limit=100&access_token=${token}`)
+    ]);
+
+    const [pubData, schData] = await Promise.all([pubRes.json(), schRes.json()]);
+    if (pubData.error) throw new Error(pubData.error.message);
+
+    const published = (pubData.data || []).map(p => ({ ...p, _type: 'published', post_time: p.created_time }));
+    const scheduled = (schData.data || []).map(p => ({
+      ...p, _type: 'scheduled',
+      post_time: p.scheduled_publish_time ? new Date(p.scheduled_publish_time * 1000).toISOString() : null
+    }));
+
+    allPosts = [...published, ...scheduled];
+    updateStats();
+    renderTable();
+
+    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-400"></span> Live`;
+    statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-green-300';
+    showToast(`⚡ ${allPosts.length} posts loaded!`);
+
+  } catch (err) {
+    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400 pulse"></span> Error`;
+    statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-red-300';
+    document.getElementById('error-message').textContent = err.message;
+    showState('error');
+  } finally {
+    btn.disabled = false; btn.textContent = '⚡ Collect Posts';
+  }
+}
+
+/* ── Stats ── */
+function updateStats() {
+  const now = new Date();
+  document.getElementById('stat-total').textContent     = allPosts.length;
+  document.getElementById('stat-published').textContent = allPosts.filter(p => p._type === 'published').length;
+  document.getElementById('stat-scheduled').textContent = allPosts.filter(p => p._type === 'scheduled').length;
+  document.getElementById('stat-today').textContent     = allPosts.filter(p => p.post_time && new Date(p.post_time).toDateString() === now.toDateString()).length;
+  document.getElementById('stat-7days').textContent     = allPosts.filter(p => p.post_time && (now - new Date(p.post_time)) <= 7*86400000).length;
+  document.getElementById('stat-month').textContent     = allPosts.filter(p => { if (!p.post_time) return false; const d = new Date(p.post_time); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
+}
+
+/* ── Render Table ── */
+function renderTable() {
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const limit  = parseInt(document.getElementById('limit-select').value);
+  const now    = new Date();
+
+  let filtered = allPosts.filter(post => {
+    const cap = (post.message || '').toLowerCase();
+    const pid = (post.id || '').toLowerCase();
+    if (search && !cap.includes(search) && !pid.includes(search)) return false;
+    const pt = post.post_time ? new Date(post.post_time) : null;
+    if (currentFilter === 'published') return post._type === 'published';
+    if (currentFilter === 'scheduled') return post._type === 'scheduled';
+    if (currentFilter === 'today')     return pt && pt.toDateString() === now.toDateString();
+    if (currentFilter === '7days')     return pt && (now - pt) <= 7*86400000;
+    if (currentFilter === '30days')    return pt && (now - pt) <= 30*86400000;
+    return true;
+  }).slice(0, limit);
+
+  if (!filtered.length) { showState('empty'); return; }
+  showState('table');
+
+  document.getElementById('posts-table').innerHTML = filtered.map((post, i) => {
+    const isSch  = post._type === 'scheduled';
+    const badge  = isSch
+      ? `<span class="inline-flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full text-xs font-medium"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Scheduled</span>`
+      : `<span class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-medium"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Published</span>`;
+    const safeId  = (post.id || '').replace(/'/g, "\\'");
+    const caption = (post.message || 'No Caption').substring(0,100) + ((post.message||'').length>100?'…':'');
+    const imgSrc  = post.full_picture || 'https://placehold.co/56x56/1e2a3a/60a5fa?text=FB';
+    return `
+      <tr class="post-row border-b border-white/4 fade-in" style="animation-delay:${i*25}ms">
+        <td class="p-4"><div class="overflow-hidden rounded-xl w-14 h-14"><img src="${imgSrc}" onerror="this.src='https://placehold.co/56x56/1e2a3a/60a5fa?text=FB'" class="post-img w-14 h-14 object-cover"/></div></td>
+        <td class="p-4 max-w-xs text-sm text-gray-300">${caption}</td>
+        <td class="p-4 text-xs text-gray-400 whitespace-nowrap">${post.post_time ? new Date(post.post_time).toLocaleString() : '—'}</td>
+        <td class="p-4">${badge}</td>
+        <td class="p-4 font-mono text-xs text-gray-500">${post.id || '—'}</td>
+        <td class="p-4"><button onclick="copyPostId('${safeId}')" class="btn-primary px-3 py-1.5 rounded-lg text-xs font-medium">Copy ID</button></td>
+      </tr>`;
+  }).join('');
+}
+
+/* ── Helpers ── */
+function showState(state) {
+  ['loading-state','idle-state','error-state','empty-state','table-wrapper'].forEach(id => {
+    const el = document.getElementById(id); el.classList.add('hidden'); el.classList.remove('flex');
+  });
+  const map = { loading:'loading-state', idle:'idle-state', error:'error-state', empty:'empty-state', table:'table-wrapper' };
+  const target = document.getElementById(map[state]);
+  target.classList.remove('hidden');
+  if (state !== 'table') target.classList.add('flex');
+}
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.className = 'filter-btn px-4 py-2 rounded-xl text-sm font-medium ' + (btn.dataset.filter === filter ? 'active-filter' : 'inactive-filter');
+  });
+  renderTable();
+}
+function copyPostId(id) { navigator.clipboard.writeText(id).then(() => showToast('✅ Post ID Copied!')); }
+function toggleTheme() { isDark = !isDark; document.documentElement.classList.toggle('dark', isDark); document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️'; }
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function exportCSV() {
+  if (!allPosts.length) { showToast('⚠️ No data to export'); return; }
+  const rows = [['Post ID','Caption','Post Time','Status','Image URL'], ...allPosts.map(p => [p.id||'', (p.message||'').replace(/"/g,'""'), p.post_time||'', p._type==='scheduled'?'Scheduled':'Published', p.full_picture||''])].map(r => r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([rows], {type:'text/csv'})); a.download = `fb_posts_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  showToast('✅ CSV Exported!');
+}
 </script>
 </body>
 </html>
