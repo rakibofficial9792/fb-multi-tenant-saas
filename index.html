@@ -89,8 +89,8 @@
     </div>
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
-        <input id="login-user" type="email" placeholder="Enter email" class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-gray-600"/>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Username</label>
+        <input id="login-user" type="text" placeholder="Enter username" class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-gray-600"/>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Password</label>
@@ -271,20 +271,20 @@ window.onload = function() {
 };
 
 /* ── Login ── */
-async function doLogin() {
-  const btn  = document.getElementById('login-btn');
+// ✅ এখানে আপনার Username & Password পরিবর্তন করুন
+const ADMIN_USER = "rakib";
+const ADMIN_PASS = "rakib1234";
+
+function doLogin() {
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value.trim();
-  if (!user || !pass) { showLoginErr('Username & Password required'); return; }
-  btn.disabled = true; btn.textContent = '⏳ Logging in...';
-  const { data, error } = await db.from('clients').select('*').eq('email', user).eq('password', pass);
-  if (error || !data.length) {
-    btn.disabled = false; btn.textContent = 'Login';
-    showLoginErr('❌ Invalid credentials'); return;
+  if (!user || !pass) { showLoginErr('⚠️ Username & Password দিন'); return; }
+  if (user !== ADMIN_USER || pass !== ADMIN_PASS) {
+    showLoginErr('❌ ভুল Username বা Password'); return;
   }
   localStorage.setItem('logged_in', 'yes');
   document.getElementById('login-overlay').style.display = 'none';
-  showToast('✅ Welcome back!');
+  showToast('✅ Welcome back Rakib! 🔥');
   const t = localStorage.getItem('fb_token');
   const p = localStorage.getItem('fb_page_id');
   if (t && p) collectPosts();
