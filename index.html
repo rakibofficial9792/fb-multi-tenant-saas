@@ -1,378 +1,580 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FB Post Collector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <style>
+    * { font-family: 'DM Sans', sans-serif; }
+    h1, h2, .font-display { font-family: 'Syne', sans-serif; }
+
+    :root {
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.25);
+    }
+
+    body {
+      background: #0a0f1e;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(59,130,246,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 90% 80%, rgba(99,102,241,0.08) 0%, transparent 60%);
+      min-height: 100vh;
+    }
+
+    /* Light mode */
+    html:not(.dark) body {
+      background: #f0f4ff;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(59,130,246,0.1) 0%, transparent 70%);
+      color: #0f172a;
+    }
+
+    /* Glassmorphism cards */
+    .glass {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(16px);
+    }
+    html:not(.dark) .glass {
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(59,130,246,0.15);
+    }
+
+    /* Stat card glow on hover */
+    .stat-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    /* Spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      animation: spin 0.75s linear infinite;
+      border-color: var(--accent) transparent transparent transparent;
+    }
+
+    /* Fade in rows */
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeSlide 0.25s ease forwards;
+    }
+
+    /* Filter buttons */
+    .filter-btn {
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .active-filter {
+      background: var(--accent);
+      color: #fff;
+      border-color: rgba(255,255,255,0.15);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .inactive-filter {
+      background: rgba(255,255,255,0.05);
+      color: #94a3b8;
+      border-color: rgba(255,255,255,0.06);
+    }
+    html:not(.dark) .inactive-filter {
+      background: rgba(0,0,0,0.05);
+      color: #475569;
+    }
+    .inactive-filter:hover {
+      background: rgba(59,130,246,0.15);
+      color: #93c5fd;
+      border-color: rgba(59,130,246,0.3);
+    }
+
+    /* Table row hover */
+    tr.post-row { transition: background 0.15s; }
+    tr.post-row:hover { background: rgba(59,130,246,0.06); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+    /* Toast */
+    #toast {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: translateY(8px);
+    }
+    #toast.show {
+      opacity: 1 !important;
+      transform: translateY(0);
+    }
+
+    /* Pulse dot */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .pulse { animation: pulse 1.8s ease-in-out infinite; }
+
+    /* Avatar ring */
+    .avatar-ring {
+      box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--accent-glow);
+    }
+
+    /* Button */
+    .btn-primary {
+      background: var(--accent);
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: all 0.15s ease;
+    }
+    html:not(.dark) .btn-ghost {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.1);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+
+    /* Input */
+    .input-field {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    html:not(.dark) .input-field {
+      background: rgba(255,255,255,0.8);
+      border-color: rgba(59,130,246,0.2);
+      color: #0f172a;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Logo shimmer */
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .logo-text {
+      background: linear-gradient(90deg, #60a5fa, #a78bfa, #60a5fa);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 4s linear infinite;
+    }
+
+    /* Image hover zoom */
+    .post-img {
+      transition: transform 0.2s ease;
+    }
+    .post-img:hover { transform: scale(1.08); }
+
+    html:not(.dark) .text-gray-300 { color: #334155; }
+    html:not(.dark) .text-gray-400 { color: #64748b; }
+    html:not(.dark) .text-gray-500 { color: #94a3b8; }
+    html:not(.dark) #posts-table tr { border-color: rgba(0,0,0,0.06); }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+<div class="max-w-7xl mx-auto p-4 md:p-6 space-y-5">
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="glass rounded-2xl p-5">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <img
+            src="rakib.png"
+            onerror="this.src='https://ui-avatars.com/api/?name=MD+Rakib&background=3b82f6&color=fff&size=64'"
+            class="w-14 h-14 rounded-xl object-cover avatar-ring"
+          />
+          <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-gray-900 pulse"></span>
+        </div>
+        <div>
+          <h1 class="text-2xl font-display font-bold logo-text">FB Post Collector</h1>
+          <p class="text-gray-400 text-xs mt-0.5">Powered by MD Rakib</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="api-status" class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-yellow-300">
+          <span class="w-2 h-2 rounded-full bg-yellow-400 pulse"></span>
+          Connecting...
+        </div>
+        <button onclick="toggleTheme()" id="theme-btn"
+          class="btn-ghost px-3 py-2 rounded-xl text-sm">
+          🌙
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STATS ═══ -->
+  <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">Owner</p>
+      <p class="text-2xl font-display font-bold">1</p>
+    </div>
+
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">Employees</p>
+      <p class="text-2xl font-display font-bold">1</p>
+    </div>
+
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">Total Posts</p>
+      <p id="stat-total" class="text-2xl font-display font-bold text-white">0</p>
+    </div>
+
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">Published</p>
+      <p id="stat-published" class="text-2xl font-display font-bold text-emerald-400">0</p>
+    </div>
+
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">Scheduled</p>
+      <p id="stat-scheduled" class="text-2xl font-display font-bold text-blue-400">0</p>
+    </div>
+
+    <div class="stat-card glass rounded-2xl p-4 text-center">
+      <p class="text-gray-400 text-xs mb-1">This Month</p>
+      <p id="stat-month" class="text-2xl font-display font-bold text-amber-400">0</p>
+    </div>
+
+  </div>
+
+  <!-- ═══ FILTER ═══ -->
+  <div class="glass rounded-2xl p-4">
+    <div class="flex flex-wrap gap-2">
+      <button onclick="setFilter('all')"       data-filter="all"       class="filter-btn active-filter px-4 py-2 rounded-xl text-sm font-medium">All</button>
+      <button onclick="setFilter('today')"     data-filter="today"     class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Today</button>
+      <button onclick="setFilter('7days')"     data-filter="7days"     class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">7 Days</button>
+      <button onclick="setFilter('30days')"    data-filter="30days"    class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">30 Days</button>
+      <button onclick="setFilter('published')" data-filter="published" class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Published</button>
+      <button onclick="setFilter('scheduled')" data-filter="scheduled" class="filter-btn inactive-filter px-4 py-2 rounded-xl text-sm font-medium">Scheduled</button>
+    </div>
+  </div>
+
+  <!-- ═══ TABLE CARD ═══ -->
+  <div class="glass rounded-2xl overflow-hidden">
+
+    <!-- Toolbar -->
+    <div class="p-4 border-b border-white/5 flex flex-col md:flex-row gap-3 justify-between items-start md:items-center">
+      <h2 class="text-lg font-display font-semibold">Latest Posts</h2>
+      <div class="flex gap-3 flex-wrap w-full md:w-auto">
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search caption or Post ID..."
+          oninput="renderTable(allPosts)"
+          class="input-field rounded-xl px-4 py-2 text-sm w-full md:w-64 text-white placeholder-gray-500"
+        />
+        <select
+          id="limit-select"
+          onchange="renderTable(allPosts)"
+          class="input-field rounded-xl px-4 py-2 text-sm text-white"
+        >
+          <option value="10">10 Posts</option>
+          <option value="25">25 Posts</option>
+          <option value="50">50 Posts</option>
+          <option value="100">100 Posts</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-state" class="flex flex-col items-center justify-center py-24 gap-4">
+      <div class="spinner w-10 h-10 border-4 rounded-full"></div>
+      <p class="text-gray-500 text-sm">Loading posts...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error-state" class="hidden flex-col items-center justify-center py-24 gap-3">
+      <div class="text-5xl">⚠️</div>
+      <p class="text-red-400 font-semibold">API Connection Failed</p>
+      <p id="error-message" class="text-gray-500 text-sm"></p>
+      <button onclick="loadPosts()" class="btn-primary px-6 py-2 rounded-xl text-sm font-medium mt-1">
+        🔄 Retry
+      </button>
+    </div>
+
+    <!-- Empty -->
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-24 gap-3">
+      <div class="text-5xl">📭</div>
+      <p class="text-gray-500 text-sm">No posts found</p>
+    </div>
+
+    <!-- Table -->
+    <div id="table-wrapper" class="hidden overflow-x-auto">
+      <table class="w-full min-w-[860px]">
+        <thead>
+          <tr class="border-b border-white/5 text-xs text-gray-500 uppercase tracking-widest">
+            <th class="text-left p-4 font-medium">Image</th>
+            <th class="text-left p-4 font-medium">Caption</th>
+            <th class="text-left p-4 font-medium">Time</th>
+            <th class="text-left p-4 font-medium">Status</th>
+            <th class="text-left p-4 font-medium">Post ID</th>
+            <th class="text-left p-4 font-medium">Action</th>
+          </tr>
+        </thead>
+        <tbody id="posts-table"></tbody>
+      </table>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="p-4 border-t border-white/5 flex flex-wrap gap-3 justify-end">
+      <button onclick="exportCSV()" class="btn-ghost px-5 py-2.5 rounded-xl text-sm font-medium">
+        📤 Export CSV
+      </button>
+      <button onclick="loadPosts()" class="btn-ghost px-5 py-2.5 rounded-xl text-sm font-medium">
+        🔄 Refresh
+      </button>
+      <button onclick="collectPosts()" id="collect-btn" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-medium">
+        📥 Collect Posts
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast"
+  class="fixed bottom-6 right-6 glass px-5 py-3 rounded-2xl text-sm opacity-0 z-50 pointer-events-none">
+</div>
+
 <script>
-
 const API_BASE = "https://fb-multi-tenant-saas.onrender.com"
-
-const TOKEN = localStorage.getItem("token") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODE0MzEzNzJ9.XkP6zWsPcvIxrOqF3IUoywK_nofRpDaFEU7ydd-sphE"
+const TOKEN = localStorage.getItem("token") ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOjIsInJvbGUiOiJjbGllbnQiLCJleHAiOjE3ODE0MzEzNzJ9.XkP6zWsPcvIxrOqF3IUoywK_nofRpDaFEU7ydd-sphE"
 
 let allPosts = []
 let currentFilter = 'all'
 let isDark = true
+let toastTimer = null
 
+/* ── Theme ── */
 function toggleTheme() {
-
   isDark = !isDark
-
   document.documentElement.classList.toggle('dark', isDark)
-
-  document.getElementById('theme-btn').textContent =
-    isDark ? '🌙' : '☀️'
+  document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️'
 }
 
+/* ── Toast ── */
 function showToast(msg) {
-
   const t = document.getElementById('toast')
-
   t.textContent = msg
-
-  t.style.opacity = '1'
-
-  setTimeout(() => {
-    t.style.opacity = '0'
-  }, 2500)
+  t.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800)
 }
 
+/* ── Copy ── */
 function copyPostId(id) {
-
-  navigator.clipboard.writeText(id)
-
-  showToast("✅ Copied")
+  navigator.clipboard.writeText(id).then(() => showToast("✅ Post ID Copied"))
 }
 
+/* ── Filter ── */
 function setFilter(filter) {
-
   currentFilter = filter
-
   document.querySelectorAll('.filter-btn').forEach(btn => {
-
-    btn.className =
-      'filter-btn px-4 py-2 rounded-xl text-sm ' +
-      (
-        btn.dataset.filter === filter
-        ? 'active-filter'
-        : 'inactive-filter'
-      )
+    const active = btn.dataset.filter === filter
+    btn.className = 'filter-btn px-4 py-2 rounded-xl text-sm font-medium ' +
+      (active ? 'active-filter' : 'inactive-filter')
   })
-
   renderTable(allPosts)
 }
 
+/* ── Show/hide states ── */
 function showState(state) {
-
-  const ids = [
-    'loading-state',
-    'error-state',
-    'empty-state',
-    'table-wrapper'
-  ]
-
-  ids.forEach(id => {
-
-    document.getElementById(id).classList.add('hidden')
-
-    document.getElementById(id).classList.remove('flex')
+  ['loading-state','error-state','empty-state','table-wrapper'].forEach(id => {
+    const el = document.getElementById(id)
+    el.classList.add('hidden')
+    el.classList.remove('flex')
   })
-
-  const target = {
+  const map = {
     loading: 'loading-state',
-    error: 'error-state',
-    empty: 'empty-state',
-    table: 'table-wrapper'
-  }[state]
-
-  document.getElementById(target).classList.remove('hidden')
-
-  if (state !== 'table') {
-
-    document.getElementById(target).classList.add('flex')
+    error:   'error-state',
+    empty:   'empty-state',
+    table:   'table-wrapper'
   }
+  const target = document.getElementById(map[state])
+  target.classList.remove('hidden')
+  if (state !== 'table') target.classList.add('flex')
 }
 
+/* ── Scheduled check ── */
 function isScheduled(post) {
-
   if (!post.post_time) return false
-
   return new Date(post.post_time).getTime() > Date.now()
 }
 
+/* ── Render table ── */
 function renderTable(posts) {
+  const search = document.getElementById('search-input').value.toLowerCase().trim()
+  const limit  = parseInt(document.getElementById('limit-select').value)
+  const now    = new Date()
 
-  const search =
-    document.getElementById('search-input')
-    .value
-    .toLowerCase()
-
-  const limit = parseInt(
-    document.getElementById('limit-select').value
-  )
-
-  const now = new Date()
-
-  let filtered = [...posts]
-
-  filtered = filtered.filter(post => {
-
-    const cap =
-      (post.caption || '').toLowerCase()
-
-    const pid =
-      (post.post_id || '').toLowerCase()
-
-    if (
-      search &&
-      !cap.includes(search) &&
-      !pid.includes(search)
-    ) {
-      return false
-    }
+  let filtered = posts.filter(post => {
+    const cap = (post.caption  || '').toLowerCase()
+    const pid = (post.post_id  || '').toLowerCase()
+    if (search && !cap.includes(search) && !pid.includes(search)) return false
 
     const pt = new Date(post.post_time)
-
-    if (currentFilter === 'today') {
-      return pt.toDateString() === now.toDateString()
-    }
-
-    if (currentFilter === '7days') {
-      return (now - pt) <= 7 * 24 * 60 * 60 * 1000
-    }
-
-    if (currentFilter === '30days') {
-      return (now - pt) <= 30 * 24 * 60 * 60 * 1000
-    }
-
-    if (currentFilter === 'published') {
-      return !isScheduled(post)
-    }
-
-    if (currentFilter === 'scheduled') {
-      return isScheduled(post)
-    }
-
+    if (currentFilter === 'today')     return pt.toDateString() === now.toDateString()
+    if (currentFilter === '7days')     return (now - pt) <= 7  * 86400000
+    if (currentFilter === '30days')    return (now - pt) <= 30 * 86400000
+    if (currentFilter === 'published') return !isScheduled(post)
+    if (currentFilter === 'scheduled') return  isScheduled(post)
     return true
-  })
+  }).slice(0, limit)
 
-  filtered = filtered.slice(0, limit)
-
-  if (!filtered.length) {
-
-    showState('empty')
-
-    return
-  }
+  if (!filtered.length) { showState('empty'); return }
 
   showState('table')
 
-  document.getElementById('posts-table').innerHTML =
-    filtered.map(post => {
+  document.getElementById('posts-table').innerHTML = filtered.map((post, i) => {
+    const scheduled = isScheduled(post)
+    const statusBadge = scheduled
+      ? `<span class="inline-flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full text-xs font-medium">
+           <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Scheduled
+         </span>`
+      : `<span class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-medium">
+           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Published
+         </span>`
 
-      const scheduled = isScheduled(post)
+    const safeId = (post.post_id || '').replace(/'/g, "\\'")
 
-      const status = scheduled
-        ? `<span class="bg-blue-900 text-blue-300 px-2 py-1 rounded-full text-xs">🔵 Scheduled</span>`
-        : `<span class="bg-green-900 text-green-300 px-2 py-1 rounded-full text-xs">✅ Published</span>`
-
-      return `
-        <tr class="border-b border-gray-700 hover:bg-gray-750 fade-in">
-
-          <td class="p-4">
+    return `
+      <tr class="post-row border-b border-white/4 fade-in" style="animation-delay:${i * 30}ms">
+        <td class="p-4">
+          <div class="overflow-hidden rounded-xl w-14 h-14">
             <img
-              src="${post.image_url || 'https://placehold.co/64'}"
-              class="w-14 h-14 rounded-xl object-cover"
+              src="${post.image_url || 'https://placehold.co/56x56/1e2a3a/60a5fa?text=FB'}"
+              onerror="this.src='https://placehold.co/56x56/1e2a3a/60a5fa?text=FB'"
+              class="post-img w-14 h-14 object-cover"
             />
-          </td>
-
-          <td class="p-4 max-w-xs text-sm text-gray-300">
-            ${(post.caption || 'No Caption').substring(0, 100)}
-          </td>
-
-          <td class="p-4 text-xs text-gray-400 whitespace-nowrap">
-            ${
-              post.post_time
-              ? new Date(post.post_time).toLocaleString()
-              : '—'
-            }
-          </td>
-
-          <td class="p-4">
-            ${status}
-          </td>
-
-          <td class="p-4 font-mono text-xs text-gray-400">
-            ${post.post_id || '—'}
-          </td>
-
-          <td class="p-4">
-            <button
-              onclick="copyPostId('${post.post_id}')"
-              class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-xl text-xs"
-            >
-              Copy ID
-            </button>
-          </td>
-
-        </tr>
-      `
-    }).join('')
+          </div>
+        </td>
+        <td class="p-4 max-w-xs text-sm text-gray-300">
+          ${(post.caption || 'No Caption').substring(0, 100)}${(post.caption || '').length > 100 ? '…' : ''}
+        </td>
+        <td class="p-4 text-xs text-gray-400 whitespace-nowrap">
+          ${post.post_time ? new Date(post.post_time).toLocaleString() : '—'}
+        </td>
+        <td class="p-4">${statusBadge}</td>
+        <td class="p-4 font-mono text-xs text-gray-500">${post.post_id || '—'}</td>
+        <td class="p-4">
+          <button
+            onclick="copyPostId('${safeId}')"
+            class="btn-primary px-3 py-1.5 rounded-lg text-xs font-medium"
+          >Copy ID</button>
+        </td>
+      </tr>
+    `
+  }).join('')
 }
 
+/* ── Collect Posts ── */
 async function collectPosts() {
-
-  const btn =
-    document.getElementById('collect-btn')
-
+  const btn = document.getElementById('collect-btn')
   btn.disabled = true
-
   btn.textContent = '⏳ Collecting...'
-
   try {
-
-    const res = await fetch(
-      `${API_BASE}/collect-posts/2`,
-      {
-        headers: {
-          Authorization: `Bearer ${TOKEN}`
-        }
-      }
-    )
-
+    const res  = await fetch(`${API_BASE}/collect-posts/2`, {
+      headers: { Authorization: `Bearer ${TOKEN}` }
+    })
     const data = await res.json()
-
-    if (!res.ok) {
-      throw new Error(
-        data.detail || 'Collect failed'
-      )
-    }
-
-    showToast(
-      `✅ ${data.new_saved} new posts saved`
-    )
-
+    if (!res.ok) throw new Error(data.detail || 'Collect failed')
+    showToast(`✅ ${data.new_saved} new posts saved`)
     loadPosts()
-
-  } catch(err) {
-
+  } catch (err) {
     showToast("❌ " + err.message)
-
   } finally {
-
     btn.disabled = false
-
     btn.textContent = '📥 Collect Posts'
   }
 }
 
+/* ── Load Posts ── */
 async function loadPosts() {
-
   showState('loading')
-
-  const status =
-    document.getElementById('api-status')
-
+  const statusEl = document.getElementById('api-status')
   try {
-
-    const res = await fetch(
-      `${API_BASE}/posts/2`,
-      {
-        headers: {
-          Authorization: `Bearer ${TOKEN}`
-        }
-      }
-    )
-
+    const res  = await fetch(`${API_BASE}/posts/2`, {
+      headers: { Authorization: `Bearer ${TOKEN}` }
+    })
     const data = await res.json()
-
-    if (!res.ok) {
-      throw new Error(
-        data.detail || 'Failed'
-      )
-    }
+    if (!res.ok) throw new Error(data.detail || 'Failed')
 
     allPosts = data.posts || []
 
-    document.getElementById('stat-total').textContent =
-      data.total || 0
+    document.getElementById('stat-total').textContent     = data.total      || 0
+    document.getElementById('stat-published').textContent = data.published  || 0
+    document.getElementById('stat-scheduled').textContent = data.scheduled  || 0
+    document.getElementById('stat-month').textContent     = data.this_month || 0
 
-    document.getElementById('stat-published').textContent =
-      data.published || 0
-
-    document.getElementById('stat-scheduled').textContent =
-      data.scheduled || 0
-
-    document.getElementById('stat-month').textContent =
-      data.this_month || 0
-
-    status.textContent = '🟢 Connected'
-
-    status.className =
-      'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'
+    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-400"></span> Connected`
+    statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-green-300'
 
     renderTable(allPosts)
 
-  } catch(err) {
-
-    status.textContent = '🔴 Offline'
-
-    status.className =
-      'text-xs px-3 py-1 rounded-full bg-red-900 text-red-300'
-
-    document.getElementById('error-message').textContent =
-      err.message
-
+  } catch (err) {
+    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400 pulse"></span> Offline`
+    statusEl.className = 'flex items-center gap-2 text-xs px-3 py-1.5 rounded-full glass text-red-300'
+    document.getElementById('error-message').textContent = err.message
     showState('error')
   }
 }
 
+/* ── Export CSV ── */
 function exportCSV() {
+  if (!allPosts.length) { showToast("⚠️ No data to export"); return }
 
-  if (!allPosts.length) {
-
-    showToast("⚠️ No data")
-
-    return
-  }
-
-  const csv = [
-
-    'Post ID,Caption,Post Time,Status,Image URL',
-
+  const rows = [
+    ['Post ID','Caption','Post Time','Status','Image URL'],
     ...allPosts.map(p => [
-
-      p.post_id,
-
+      p.post_id || '',
       (p.caption || '').replace(/"/g, '""'),
-
       p.post_time || '',
-
-      isScheduled(p)
-        ? 'Scheduled'
-        : 'Published',
-
+      isScheduled(p) ? 'Scheduled' : 'Published',
       p.image_url || ''
-
-    ].map(v => `"${v}"`).join(','))
-
-  ].join('\n')
+    ])
+  ].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
 
   const a = document.createElement('a')
-
-  a.href = URL.createObjectURL(
-    new Blob([csv], { type: 'text/csv' })
-  )
-
-  a.download = 'fb_posts.csv'
-
+  a.href = URL.createObjectURL(new Blob([rows], { type: 'text/csv' }))
+  a.download = `fb_posts_${new Date().toISOString().slice(0,10)}.csv`
   a.click()
-
   showToast("✅ CSV Exported")
 }
 
-/* FIRST LOAD */
+/* ── Init ── */
 loadPosts()
-
-/* AUTO REFRESH EVERY 10 SEC */
-setInterval(() => {
-
-  loadPosts()
-
-}, 10000)
-
+setInterval(loadPosts, 30000) // refresh every 30s (10s was too aggressive)
 </script>
+</body>
+</html>
