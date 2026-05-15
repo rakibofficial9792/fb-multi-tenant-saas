@@ -420,74 +420,95 @@ def get_posts(
     user=Depends(verify_token)
 ):
 
-    if user["client_id"] != client_id:
+    try:
 
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied"
-        )
+        # SAFE CLIENT CHECK
+        if int(user["client_id"]) != int(client_id):
 
-    # auto_delete_old_posts(client_id)
-
-    posts_result = supabase.table("posts").select("*").eq(
-        "client_id",
-        client_id
-    ).order(
-        "post_time",
-        desc=True
-    ).execute()
-
-    posts = posts_result.data or []
-
-    now = datetime.now(timezone.utc)
-
-    published = 0
-    scheduled = 0
-    this_month = 0
-
-    current_month = now.month
-    current_year = now.year
-
-    for p in posts:
-
-        try:
-
-            if not p.get("post_time"):
-                continue
-
-            post_time = datetime.fromisoformat(
-                p["post_time"].replace("Z", "+00:00")
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied"
             )
 
-            if post_time > now:
-                scheduled += 1
-            else:
-                published += 1
+        # TEMP DISABLED
+        # auto_delete_old_posts(client_id)
 
-            if (
-                post_time.month == current_month
-                and
-                post_time.year == current_year
-            ):
-                this_month += 1
+        posts_result = supabase.table("posts").select("*").eq(
+            "client_id",
+            client_id
+        ).order(
+            "post_time",
+            desc=True
+        ).execute()
 
-        except:
-            pass
+        posts = posts_result.data or []
 
-    return {
+        now = datetime.now(timezone.utc)
 
-        "success": True,
+        published = 0
+        scheduled = 0
+        this_month = 0
 
-        "total": len(posts),
+        current_month = now.month
+        current_year = now.year
 
-        "published": published,
+        for p in posts:
 
-        "scheduled": scheduled,
+            try:
 
-        "this_month": this_month,
+                post_time_raw = p.get("post_time")
 
-        "posts": posts
-    }
+                if not post_time_raw:
+                    continue
+
+                post_time = datetime.fromisoformat(
+                    str(post_time_raw).replace("Z", "+00:00")
+                )
+
+                # FUTURE POST
+                if post_time > now:
+                    scheduled += 1
+
+                # PUBLISHED POST
+                else:
+                    published += 1
+
+                # THIS MONTH
+                if (
+                    post_time.month == current_month
+                    and
+                    post_time.year == current_year
+                ):
+                    this_month += 1
+
+            except Exception as e:
+
+                print("POST PROCESS ERROR:", e)
+                continue
+
+        return {
+
+            "success": True,
+
+            "total": len(posts),
+
+            "published": published,
+
+            "scheduled": scheduled,
+
+            "this_month": this_month,
+
+            "posts": posts
+        }
+
+    except Exception as e:
+
+        print("GET POSTS ERROR:", e)
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 # ─────────────────────────────────────────────
 # EMPLOYEE POSTS
