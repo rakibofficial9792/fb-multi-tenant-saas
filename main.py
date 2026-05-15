@@ -1,24 +1,22 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.middleware.cors import CORSMiddleware  # ✅ নতুন import
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client
 import requests
 import os
-
 from jose import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
 app = FastAPI()
 
-# ✅ CORS FIX — GitHub Pages থেকে API call করতে পারবে
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://rakibofficial9792.github.io",  # GitHub Pages
-        "http://localhost",                      # Local test
-        "http://127.0.0.1",                      # Local test
+        "https://rakibofficial9792.github.io",
+        "http://localhost",
+        "http://127.0.0.1",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -34,63 +32,41 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 SECRET_KEY = "SUPER_SECRET_KEY_2026"
-ALGORITHM = "HS256"
+ALGORITHM  = "HS256"
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security    = HTTPBearer()
 
-security = HTTPBearer()
 
+# ── Helpers ──────────────────────────────────────────────
 
 def create_access_token(data: dict, expires_days: int = 7):
-
     to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(days=expires_days)
-
-    to_encode.update({
-        "exp": expire
-    })
-
-    encoded_jwt = jwt.encode(
-        to_encode,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
-
-    return encoded_jwt
+    to_encode.update({"exp": datetime.utcnow() + timedelta(days=expires_days)})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def verify_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-
-    token = credentials.credentials
-
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
-
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
-
-        return payload
-
+        return jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
     except:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
-        )
 
+def auto_delete_old_posts(client_id: int):
+    """Calendar month শুরুর আগের সব post delete করে"""
+    now = datetime.utcnow()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    supabase.table("posts").delete().eq(
+        "client_id", client_id
+    ).lt("created_at", start_of_month).execute()
+
+
+# ── Models ───────────────────────────────────────────────
 
 class ClientLogin(BaseModel):
     email: str
     password: str
-
 
 class EmployeeLogin(BaseModel):
     username: str
@@ -101,292 +77,168 @@ class CreateEmployee(BaseModel):
     username: str
     password: str
 
+
+# ── Routes ───────────────────────────────────────────────
+
 @app.get("/")
 def home():
-
-    return {
-        "status": "running",
-        "message": "FB Multi Tenant SaaS Live 🚀"
-    }
+    return {"status": "running", "message": "FB Multi Tenant SaaS Live 🚀"}
 
 
 @app.post("/client-login")
 def client_login(data: ClientLogin):
-
-    result = supabase.table("clients").select("*").eq(
-        "email",
-        data.email
-    ).execute()
-
+    result = supabase.table("clients").select("*").eq("email", data.email).execute()
     if not result.data:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid login"
-        )
-
-    user_data = result.data[0]
-
-    if not pwd_context.verify(
-        data.password,
-        user_data["password"]
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid password"
-        )
-
-    token = create_access_token(
-        {
-            "client_id": user_data["id"],
-            "role": "client"
-        },
-        expires_days=30
-    )
-
-    return {
-        "success": True,
-        "token": token,
-        "client": user_data
-    }
+        raise HTTPException(status_code=401, detail="Invalid login")
+    user = result.data[0]
+    if not pwd_context.verify(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    token = create_access_token({"client_id": user["id"], "role": "client"}, expires_days=30)
+    return {"success": True, "token": token, "client": user}
 
 
 @app.post("/employee-login")
 def employee_login(data: EmployeeLogin):
-
-    result = supabase.table("employees").select("*").eq(
-        "username",
-        data.username
-    ).execute()
-
+    result = supabase.table("employees").select("*").eq("username", data.username).execute()
     if not result.data:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid login"
-        )
-
-    user_data = result.data[0]
-
-    if not pwd_context.verify(
-        data.password,
-        user_data["password"]
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid password"
-        )
-
+        raise HTTPException(status_code=401, detail="Invalid login")
+    user = result.data[0]
+    if not pwd_context.verify(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
     token = create_access_token(
-        {
-            "employee_id": user_data["id"],
-            "client_id": user_data["client_id"],
-            "role": "employee"
-        },
+        {"employee_id": user["id"], "client_id": user["client_id"], "role": "employee"},
         expires_days=7
     )
+    return {"success": True, "token": token, "employee": user}
 
-    return {
-        "success": True,
-        "token": token,
-        "employee": user_data
-    }
 
 @app.post("/create-employee/{client_id}")
-def create_employee(
-    client_id: int,
-    data: CreateEmployee,
-    user=Depends(verify_token)
-):
-
+def create_employee(client_id: int, data: CreateEmployee, user=Depends(verify_token)):
     if user["client_id"] != client_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied"
-        )
-
-    existing = supabase.table("employees").select("*").eq(
-        "username",
-        data.username
-    ).execute()
-
-    if existing.data:
-        raise HTTPException(
-            status_code=400,
-            detail="Username already exists"
-        )
-
-    hashed_password = pwd_context.hash(
-        data.password
-    )
-
-    new_employee = {
-        "client_id": client_id,
+        raise HTTPException(status_code=403, detail="Access denied")
+    if supabase.table("employees").select("*").eq("username", data.username).execute().data:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    result = supabase.table("employees").insert({
+        "client_id":     client_id,
         "employee_name": data.employee_name,
-        "username": data.username,
-        "password": hashed_password
-    }
-
-    result = supabase.table("employees").insert(
-        new_employee
-    ).execute()
-
-    return {
-        "success": True,
-        "employee": result.data[0]
-    }
+        "username":      data.username,
+        "password":      pwd_context.hash(data.password)
+    }).execute()
+    return {"success": True, "employee": result.data[0]}
 
 
 @app.get("/collect-posts/{client_id}")
-def collect_posts(
-    client_id: int,
-    user=Depends(verify_token)
-):
-
+def collect_posts(client_id: int, user=Depends(verify_token)):
     if user["client_id"] != client_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied"
-        )
+        raise HTTPException(status_code=403, detail="Access denied")
 
-    client = supabase.table("clients").select("*").eq(
-        "id",
-        client_id
-    ).execute()
-
+    client = supabase.table("clients").select("*").eq("id", client_id).execute()
     if not client.data:
-        raise HTTPException(
-            status_code=404,
-            detail="Client not found"
-        )
+        raise HTTPException(status_code=404, detail="Client not found")
 
-    client_data = client.data[0]
+    c          = client.data[0]
+    fb_url     = f"https://graph.facebook.com/v23.0/{c.get('page_id')}/posts"
+    params     = {
+        "access_token": c.get("access_token"),
+        "fields": "id,message,created_time,full_picture,scheduled_publish_time",
+        "limit": 100
+    }
 
-    page_id = client_data.get("page_id")
-    access_token = client_data.get("access_token")
+    # ✅ Pagination — সব post আনবে
+    all_posts = []
+    while True:
+        response  = requests.get(fb_url, params=params)
+        data      = response.json()
+        batch     = data.get("data", [])
+        all_posts.extend(batch)
+        next_page = data.get("paging", {}).get("next")
+        if not next_page:
+            break
+        fb_url = next_page
+        params = {}
 
-    fb_url = f"https://graph.facebook.com/v23.0/{page_id}/posts"
-
-    response = requests.get(
-        fb_url,
-        params={
-            "access_token": access_token,
-            "fields": "id,message,created_time,full_picture"
-        }
-    )
-
-    data = response.json()
-
-    posts = data.get("data", [])
-
+    posts       = all_posts
     saved_posts = []
 
     for post in posts:
-
         post_id = post.get("id")
-
-        existing = supabase.table("posts").select("*").eq(
-            "post_id",
-            post_id
-        ).execute()
-
-        if existing.data:
+        if supabase.table("posts").select("id").eq("post_id", post_id).execute().data:
             continue
 
-        post_data = {
-            "client_id": client_id,
-            "post_id": post.get("id"),
-            "caption": post.get("message", ""),
-            "image_url": post.get("full_picture", ""),
-            "created_time": post.get("created_time")
-        }
+        # scheduled_publish_time থাকলে সেটা, না হলে created_time
+        scheduled = post.get("scheduled_publish_time")
+        post_time = scheduled if scheduled else post.get("created_time")
 
-        supabase.table("posts").insert(
-            post_data
-        ).execute()
+        supabase.table("posts").insert({
+            "client_id":  client_id,
+            "post_id":    post_id,
+            "caption":    post.get("message", ""),
+            "image_url":  post.get("full_picture", ""),
+            "post_time":  post_time,
+        }).execute()
 
-        saved_posts.append(post_data)
+        saved_posts.append(post_id)
+
+    # ✅ পুরনো post auto delete
+    auto_delete_old_posts(client_id)
 
     return {
-        "success": True,
+        "success":      True,
         "total_fetched": len(posts),
-        "new_saved": len(saved_posts),
-        "posts": saved_posts
+        "new_saved":    len(saved_posts),
     }
 
 
 @app.get("/posts/{client_id}")
-def get_posts(
-    client_id: int,
-    user=Depends(verify_token)
-):
-
+def get_posts(client_id: int, user=Depends(verify_token)):
     if user["client_id"] != client_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied"
-        )
+        raise HTTPException(status_code=403, detail="Access denied")
 
-    posts = supabase.table("posts").select("*").eq(
-        "client_id",
-        client_id
-    ).order(
-        "id",
-        desc=True
-    ).execute()
+    # ✅ Auto delete পুরনো post
+    auto_delete_old_posts(client_id)
+
+    now = datetime.utcnow()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+    # সব post count (stats এর জন্য)
+    all_posts = supabase.table("posts").select("*").eq(
+        "client_id", client_id
+    ).order("id", desc=True).limit(1000).execute()
+
+    total      = len(all_posts.data)
+    published  = sum(1 for p in all_posts.data if p.get("post_time") and p["post_time"] <= now.isoformat())
+    scheduled  = sum(1 for p in all_posts.data if p.get("post_time") and p["post_time"] >  now.isoformat())
+    this_month = sum(1 for p in all_posts.data if p.get("created_at") and p["created_at"] >= start_of_month)
+
+    # এই মাসের post (table এর জন্য)
+    month_posts = supabase.table("posts").select("*").eq(
+        "client_id", client_id
+    ).gte("created_at", start_of_month).order("id", desc=True).execute()
 
     return {
-        "success": True,
-        "posts": posts.data
+        "success":    True,
+        "total":      total,
+        "published":  published,
+        "scheduled":  scheduled,
+        "this_month": this_month,
+        "posts":      month_posts.data,
     }
 
 
 @app.get("/employee-posts/{employee_id}")
-def employee_posts(
-    employee_id: int,
-    user=Depends(verify_token)
-):
-
-    if user["employee_id"] != employee_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied"
-        )
-
-    employee = supabase.table("employees").select("*").eq(
-        "id",
-        employee_id
-    ).execute()
-
+def employee_posts(employee_id: int, user=Depends(verify_token)):
+    if user.get("employee_id") != employee_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    employee = supabase.table("employees").select("*").eq("id", employee_id).execute()
     if not employee.data:
-        raise HTTPException(
-            status_code=404,
-            detail="Employee not found"
-        )
-
-    employee_data = employee.data[0]
-
-    client_id = employee_data["client_id"]
-
-    posts = supabase.table("posts").select("*").eq(
-        "client_id",
-        client_id
-    ).order(
-        "id",
-        desc=True
-    ).execute()
-
-    return {
-        "success": True,
-        "employee": employee_data["employee_name"],
-        "posts": posts.data
-    }
+        raise HTTPException(status_code=404, detail="Employee not found")
+    emp       = employee.data[0]
+    posts     = supabase.table("posts").select("*").eq(
+        "client_id", emp["client_id"]
+    ).order("id", desc=True).execute()
+    return {"success": True, "employee": emp["employee_name"], "posts": posts.data}
 
 
 @app.get("/generate-hash/{password}")
 def generate_hash(password: str):
-
-    hashed_password = pwd_context.hash(password)
-
-    return {
-        "password": password,
-        "hashed_password": hashed_password
-    }
+    return {"password": password, "hashed_password": pwd_context.hash(password)}
