@@ -399,7 +399,7 @@ def collect_posts(
 
         saved_posts.append(post_id)
 
-    auto_delete_old_posts(client_id)
+    # auto_delete_old_posts(client_id)
 
     return {
 
@@ -427,7 +427,7 @@ def get_posts(
             detail="Access denied"
         )
 
-    auto_delete_old_posts(client_id)
+    # auto_delete_old_posts(client_id)
 
     posts_result = supabase.table("posts").select("*").eq(
         "client_id",
