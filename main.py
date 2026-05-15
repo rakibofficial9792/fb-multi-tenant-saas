@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
 
@@ -14,9 +15,10 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 import os
+import csv
+import io
 
 app = FastAPI()
-
 # ─────────────────────────────────────────────
 # CORS
 # ─────────────────────────────────────────────
@@ -571,3 +573,79 @@ def generate_hash(password: str):
 
         "hashed_password": pwd_context.hash(password)
     }
+    
+# ─────────────────────────────────────────────
+# CSV API
+# ─────────────────────────────────────────────
+
+@app.get("/export-posts/{client_id}")
+def export_posts(
+    client_id: int,
+    user=Depends(verify_token)
+):
+
+    try:
+
+        # CLIENT SECURITY CHECK
+        if int(user["client_id"]) != int(client_id):
+
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied"
+            )
+
+        # GET POSTS
+        posts_result = supabase.table("posts").select("*").eq(
+            "client_id",
+            client_id
+        ).order(
+            "post_time",
+            desc=True
+        ).execute()
+
+        posts = posts_result.data or []
+
+        # CREATE CSV
+        output = io.StringIO()
+
+        writer = csv.writer(output)
+
+        # CSV HEADER
+        writer.writerow([
+            "Post ID",
+            "Caption",
+            "Image URL",
+            "Post Time"
+        ])
+
+        # CSV ROWS
+        for post in posts:
+
+            writer.writerow([
+                post.get("post_id", ""),
+                post.get("caption", ""),
+                post.get("image_url", ""),
+                post.get("post_time", "")
+            ])
+
+        output.seek(0)
+
+        # DOWNLOAD RESPONSE
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition":
+                f"attachment; filename=posts_client_{client_id}.csv"
+            }
+        )
+
+    except Exception as e:
+
+        print("EXPORT POSTS ERROR:", e)
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+        
